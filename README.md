@@ -1,6 +1,3 @@
-# bechele
-#------------------------------------------------------------------------------
-# bechele is a perl based software that allows to record and play servo 
-# movements according to music. For example it may be used to animate moving
-# and speaking puppets.
-#------------------------------------------------------------------------------
+# bechele is a perl based animatronics software, that allows to record joystick- and play servo movements according to sound. For example it may be used, to animate moving and speaking robot puppets. The software is usually running on a Raspberry Pi like mini computer under Linux.
+It was initially intended to ease ventriloquist like puppet play, but it can do meanwhile much more than that. Since the number of possibly driven servos with this version is far beyond usual needs, it may be used any time, you need to move mechanics synchronous to sound in a record and replay manner.
+[bechele sample video](https://www.youtube.com/watch?v=mnbeAe6cOiU)
