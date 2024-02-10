@@ -1,0 +1,87 @@
+Änderungen von 1.1 auf 2.0
+Für alle Programme:
+ - Die Anzahl der adressierbaren Servos ist nur durch die Anzahl der
+   PCA9685-Chips, durch die Geschwindigkeit des I2C-Busses und durch die
+   Bildwiederholfrequenz der Servos begrenzt. Sie können problemlos bis zu 400
+   Servos ansteuern, bis Sie an ernsthafte Grenzen stoßen.
+ - Wechsel vom PWM-Chip-Treibermodul Device::Chip::PCA9685 zu 
+   RPi::MultiPCA9685. Dieses Modul ist viel schneller und ermöglicht die
+   Adressierung mehrerer PWM-Module in einem Durchgang. Da kein vernünftiges
+   Modul verfügbar war, das die kontinuierliche Schreibfunktion des Chips
+   nutzte, habe ich dieses Modul geschrieben und auf CPAN veröffentlicht.
+ - Für den selbstgebauten Joystick und das Gamepad gibt es jetzt nur noch
+   servocalib.pl und servocalib-single.pl. Die Auswahl, welches verwendet
+   wird, wird in Modules/ConfigL.pm mit dem Parameter $use_gamepad definiert.
+ - Es gibt jetzt nur noch eine trackui.pl, da die Auswahl des Eingabegeräts
+   über den Modules/ConfigL.pm-Parameter $use_gamepad erfolgt.
+ - Bei jedem der Programme das Servos bewegt, werden nach jeder Sequenz alle
+   servos deaktiviert. Das hat den Vorteil, dass mechanische Blockierungen nicht
+   zur Überhitzung der Servos im Ruhezustand führt.
+
+trackui.pl:
+ - Hier haben wir die meisten Änderungen. Das Funktionsprinzip ist das gleiche
+   wie zuvor, aber die Benutzeroberfläche sieht ziemlich verändert aus.
+ - Da wir nun eine große Anzahl von Servos ansprechen können, wird die
+   Servosektion automatisch in Notebooks aufgeteilt und die Servoauswahl ist
+   über Notebooks oder Tabs umschaltbar, abhängig von der Anzahl der
+   konfigurierten Servos.
+ - Da wir möglicherweise viele Servos haben, werden beim Betrachten einer
+   Bewegungssequenz standardmäßig nur für die im Servobereich ausgewählten
+   Servos Daten angezeigt. Sie können alle Servos einschalten, indem Sie das
+   Kontrollkästchen 
+   'record or output all moves independent of Start and Stop moves' 
+   aktivieren, aber die Bildschirmausgabe bewegt sich sehr schnell, was das
+   Beobachten erschwert.
+ - Die Geschwindigkeit des Dateiladens ist mit einem anderen Algorithmus viel
+   schneller.
+ - Möglichkeit, die Servo-Aktualisierungsrate in Hz-Einheiten zu ändern.
+   Sinnvolle Werte liegen zwischen 3 und 25 Hz. Niedrigere Frequenzen führen
+   zu kleineren .svo-Dateien und mehr adressierbaren Servos, während höhere
+   Frequenzen schnellere Bewegungen ermöglichen. Höhere Bildwiederholraten
+   als 20 oder 25 Hz machen in der Regel keinen Sinn, da das menschliche Auge
+   maximal etwa 25 Änderungen pro Sekunde auflösen kann. Ein Servo benötigt
+   ca. eine Programmierzeit von 0,55 ms. Bei 20 Hz können Sie etwa 90 Servos
+   ansprechen und bei 5 Hz können Sie etwa 350 Servos ansprechen. Allerdings
+   stößt man früher an andere Grenzen. Beispielsweise ist es ziemlich
+   schwierig, die maximale Kabellänge für den I2C-Bus bei der Verwendung von
+   Standard-PCA9685-Boards (Adafruit) nicht zu überschreiten. Es kann auch
+   eine Herausforderung sein, zu verhindern, dass die Back-EMF von 350 
+   gleichzeitig bewegten Servos die Stabilität Ihres I2C-Busses
+   beeinträchtigt.
+ - Eine neue Funktion 'fill' wurde eingeführt. Diese Funktion ermöglicht es,
+   Servobewegungen über einen Bereich mit einem Vektor zu füllen. Dies ist
+   neben der Aufzeichnung von Bewegungen über einen Joystick eine zweite
+   Möglichkeit, Bewegungen zu erstellen.
+ - Es wurde eine neue Funktion 'copy' eingeführt, die das Kopieren einer
+   Reihe von Servos auf andere Servos sowie das Verschieben des Inhalts
+   innerhalb von Servobewegungen (Verschieben) ermöglicht. Die Kopierrichtung
+   kann beliebig sein, einschließlich der Umkehrung der Kopierrichtung.
+   Weiter kann zusätzlich die Bewegungsrichtung des Servos invertiert werden.
+
+live.pl:
+  - Keine sichtbaren Änderungen für den Benutzer.
+
+Aenderungen von 1.0 zu 1.1
+Fuer alle Programme:
+Aenderung zu Library WiringPi - das erlaubt den Betrieb auf verschiedenen
+Plattformen.
+
+track.pl wurde trackui.pl - Das Programm hat nun folgende neue Features:
+ - Abstrahierte bewegungspositionen (0-4096) so dass Servos und Joystick ohne
+   Neueinlesen der Positionen angepasst werden koennen. Eine Modifikation in den
+   Einstellungen reicht aus.
+ - Hat nun eine Quasi graphische Benutzerschnittstelle fuer mehr Flexibilitaet.
+ - Kombination von Bewegungen - Servos koennen simultan mit einer Joystick 
+   Achse erfasst werden. 
+ - Teilausschnitte einer kompletten Sequenz koennen nachbearbeitet werden ohne
+   die Notwendigkeit eine ganzzeitige Servobewegung einzulesen.
+ - Servos koennen frei einem Joystick zugeordnet werden - ganz nach Wunsch.
+ - Servos kann ein text zugeordnet werden, so dass diese Namen angezeigt werden. 
+
+servocalib: - dient zur Kalibrierung und Einrichtung von Servos
+ - servos may be changed with key presses on the joy stick.
+ - Entstehende Daten koennen zur Servokalibration herangezogen werden.
+
+live.pl 
+ - Keine sichtbaren Aenderungen fuer den Benutzer
+

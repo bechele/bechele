@@ -1,0 +1,52 @@
+#!/bin/sh
+#   backup script to put all project relevant files into a zipped tar ball
+#   Copyright (C) <2015>  <Rolf Jethon>
+#   Version 1.0
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# backup only new files into tar file encrypt and send to backup server
+
+timestamp=/usr/local/backup/timestamp_backup
+backupfile=project
+backupdir=/usr/local/backup/
+dirs="usr/local/bin etc/vimrc etc/profile.d home usr/lib/systemd/system/runlive.service"
+exclude=""
+#-----------------------------------------------
+date=`date`
+time=`date +%s`
+cd /
+if [ "x$1" = "xfull" ]; then 
+   backupfile=full_project
+   tar -rvf $backupdir$backupfile $exclude $dirs 
+   if [ $? -ne 0 ]; then
+     echo "Backup of site stuff failed on $date - error on tarring files" >>/usr/local/backup/backup.log
+     exit 0
+   fi
+else
+  for dir in $dirs
+  do
+    find $dir -type f -newer $timestamp -exec tar -rvf $backupdir$backupfile {} \;
+    if [ $? -ne 0 ]; then
+      echo "Backup of site stuff failed on $date - error on tarring files" >>/usr/local/backup/backup.log
+      exit 0
+    fi
+  done
+fi
+if [ -f "$backupdir$backupfile" ]; then
+  gzip -9 -S .tgz $backupdir$backupfile
+  touch $timestamp
+fi
+mv $backupdir$backupfile.tgz $backupdir$backupfile$time.tgz
+

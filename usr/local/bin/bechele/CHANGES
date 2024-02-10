@@ -1,0 +1,73 @@
+Changes from 1.1 to 2.0
+For all programs:
+ - The number of addressable Servos is just limited by the number of PCA9685 
+   chips, by the speed of the I2C bus and by the refresh rate of the servos. 
+   Easily you may drive up to 400 Servos, until you reach serious limits.
+ - Change from PWM chip driver module Device::Chip::PCA9685 to RPi::MultiPCA9685
+   This module is far quicker and allows to address several PWM Boards in one go
+   Since there was no reasonable module available that used the continuous write
+   function of the chip, I wrote this module and published it on CPAN
+ - There is now only one servocalib.pl and servocalib-single.pl for the self
+   made joy stick and the gamepad. The selection, which one is in use is defined 
+   in Modules/ConfigL.pm using parameter: $use_gamepad.  
+ - There is now only one trackui.pl since the selection of the input device is
+   done via Modules/ConfigL.pm parameter $use_gamepad.
+ - After running any of the programs that move servos, the PWM will be disabled
+   This has the advantage, that mechanical blocks do not overheat the servos.
+
+trackui.pl: 
+ - Here we have most changes. The working principle is the same like before,
+   but the interface looks quite a bit changed.
+ - Since we now can address a big number of servos, the servo section is split
+   automatically into notebooks and the servo selection is switchable via the 
+   notebooks, depending on the number of configured servos.
+ - Since we may have lots of servos, when viewing a sequence of movements, only 
+   the servos selected in the servo section show data by default during viewing. 
+   You may switch on all servos by checking Box "View all"  but the screen 
+   output is moving very quickly which makes it uncomfortable to observe. 
+ - The speed of file loading is much quicker using a different algorithm.
+ - Possibility to change the servo refresh rate in Units of Hz. Resonable values 
+   are 3 to 25 Hz. Lower frequencies cause smaller .svo files and more 
+   addressable servos, where higher frequencies allow quicker movements.
+   Usually it makes no sense to have higher refresh rates than 20 or 25 Hz, 
+   because the human eye can resolve about a maximum of 25 changes per second.
+   One servo needs approximately a programming time of 0.55 ms. At 20 Hz you may 
+   address about 90 Servos and at 5 Hz you may address about 350 Servos.
+   However you run earlier into other limits. For example it is rather difficult
+   not to exceed the maximum cable lengths for the I2C Bus when using standard 
+   (Adafruit) PCA9685 boards. Also preventing the Back EMF of 350 servos moving 
+   at the same time from affecting your I2C bus stability may be challenging. 
+ - A new function 'fill' has been introduced. This fuction allows to fill servo 
+   moves with a vector over a range. This is a second possibility to create
+   moves apart from recording moves via a joystick. 
+ - A new function 'copy' has been introduced, that allows to copy a range of 
+   servos to other servos along with moving the content within servo moves
+   (shifting). The copying direction may be in either way including inverting
+   the copy direction. Also inverting the servo movement direction is possible. 
+
+live.pl:
+ - no visible changes to the user.
+
+Changes from 1.0 to 1.1
+For all programs:
+Change to library WiringPi - this allows to run on different platforms
+
+track.pl became trackui.pl - it now has the following features:
+ - abstacted movement positions (0-4096) so servos and joy stick may be changed
+   without the need of re.reading the movements. A modification in the settings
+   adapts new hardware to existing movement files.
+ - has a quasi graphical interface for more flexibility
+ - combination of movements - servos can be moved simultaneously with one joy
+   stick movement. 
+ - just parts within a complete sequence (a time slice) may be recorded or 
+   changed, without the need to re-do all movements for the given servo again.
+ - servos may be freely assgned to a joy stick ayis as per your needs.
+ - textual information can be applied to the servo number so they will be named.
+
+servocalib shows now al relevant positions of two servos
+ - servos may be changed with key presses on the joy stick.
+ - Resulting data can be used to set up the servo limits
+
+live.pl 
+ - no visible changes to the user.
+

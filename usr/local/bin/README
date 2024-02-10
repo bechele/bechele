@@ -1,0 +1,3 @@
+Please note, that you should not run PCA9685-minimal.pl with servos connected
+to the PCA9685 chip, that have mechanical limits which should not exceed. 
+If you do not respect, this may over load and destroy your servos!!! 

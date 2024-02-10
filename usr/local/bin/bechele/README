@@ -1,0 +1,433 @@
+This is the documentation to project bechele.de
+Further infos under www.bechele.de
+Author Rolf Jethon
+
+bechele,de is a Raspberry Pi project, that enables you to create movement models
+like hand puppets, dance puppets or animal robots with simultaneous output of
+audio data and servo movement to awake these models to life, without the need of
+programming.
+
+Instead of a Raspberry Pi a OrangePi PC or any other rasperry pi like linux 
+based micro computer can be used - For Raspberry Pi and OrangePi PC separate SD
+card images exists.  
+
+All required project scripts reside in folder /usr/local/bin/bechele.
+
+Basics
+To move a movement robot syncronized to music or speech, it is required to add
+the movement in some way according to the tone. In this project this happens by
+moving a joystick by hand synchronous to the sound. At the same time the 
+movements will be output to the servos to be able to check the results on the 
+fly. The number of recording channels is not limited by software but by chip 
+timing and hardware. There is a hardware limit of a maximum of 64 PCA9685 
+boards. Another limit is the chip timing for addressing all servos. Timing is 
+depending on the refresh rate of the movements. Currently this is 50 ms or 20
+Hz. With 20Hz refresh rate a maximum of approx. 120 Servos can be addressed. 
+If you need to address more servos you need to change the refresh rate, 
+otherwise there is not enough time to set all servos. In case of the example 
+puppet, the number of Servos in use is only 8. This limitation is just 
+coincidencial and not a limit for other projects. 
+Because with a joystick only two channels can be recorded, the recording of all
+channels need to be done sequentially. In case of Mr. Bechele I recorded first 
+the mouth movement according to the speech audio mp3 file. Because mouth 
+movements are very quick they need full concentration to acieve a more or less 
+accurate result. Therefore I just recorded one channel only, though I had two 
+channels available. Then I recoreded the eye lid movement with also only one 
+channel but with two servos activated at the same (x) direction. 
+Finally I recorded the eye movement with two channels at the same time. The 
+audio data was divided in single short sections, to allow the puppet player to
+respond in the speech pauses. After finishing recording, audio data and movement
+can be output step by step by pressing a button, so that the audience has the 
+impression the puppet really talks to the puppet player. 
+  
+Working principle:
+A movement set consists always of a mp3 sound file, and a .svo file that
+contains the movement information for the servos. Optionally a text file with
+the same name may exist, that contains text hints for the puppet player - in case
+you don't want to learn all the dialogs by rote. This text will then be shown on
+the terminal window, you started the program from. 
+
+In the first version of the project, the positions of the joy stick were passed 
+directly to the servos. There the value range of the joy stick needed to 
+coincide exactly with the servo position values. This had the following
+disadvantages:
+- The whole movement range of the servo needed to be possible for the servo.
+- Different servo types could not be combined if the parameters differed.
+- After changing mechanical parameters of a servo or joy stick, a mecanical
+  re-calibration was required.
+- Mechanical changes required a re-recording of the concerned movement.
+Therefore joy stick movements as well as servo movements will be parametrized
+and normalized to a range of 0 to 4096 in file ConfigL.pm. If for example a 
+mouth movement of a puppet was realized, so that 2/3 of the possible angle range
+of the servo was in use and after a mechanical change just the half of the 
+angle range is needed, existing movement file can be re-used without any change,
+by adapting the servo parameters. The same applies if the joy stick changes.
+The positions of 0 to 4096 in a movement file contains the complete possible 
+mechanical movement range of the servo in the model. In other words: The servo
+-despite parametrized correctly- does never try to exceed its mechanical 
+limits in the model.
+
+------------------------------------------------------------------------------
+Installation:
+The easiest way is to write a pre-defined SD card image to a SD card and you are
+almost ready to go. For those who want to install themself, expect a time 
+consuming installation marathon:
+
+Unpack the tar ball into / (root) of your distribution.
+Depending on the linux distribution some software needs to be installed.
+How to install that depends on the distribution.
+
+you need:   
+   cpanminus (required)
+   WiringPi (required for RaspBerry Pi)
+   git (required for OrangePi)
+   make (required for OrangePi)
+   gcc (required for OrangePi)
+   WiringOP (required for Orange Pi - install with:
+      git clone https://github.com/zhaolei/WiringOP.git -b h3
+      after that > cd WiringOP < and then > ./build <)
+      now > echo '/usr/local/lib' >> /etc/ld.so.conf.d/randomLibs.conf <
+      and > ldconfig <
+      test with > gpio readall < all gpios should be displayed
+      )
+   alsa-utils (required)
+   mpg123 (required)
+   i2c-tools (required)
+   perl 5 (probably pre-installed - required)
+   perl-device-serialport (required)
+   libncurses5-dev (required)
+   libncursesw5-dev (required)
+
+Further you need to install some perl modules - easiest is to use:
+cpanm <Modulname>
+Many modules depend on other modules, so that the installation may take a while.
+
+ PERL MODULES:
+   strict
+   RPi::I2C
+   RPi::MultiPCA9685
+   Device::SerialPort
+   Curses::UI
+   WiringPi::API 
+   File::Find::Rule
+   Linux::Joystick
+   Audio::Play::MPG123
+   Time::HR
+   ConfigL (This comes along with the tar ball and does not need to be installed)
+
+After the installation, some parameters need to be set - see section 
+configuration.
+
+------------------------------------------------------------------------------
+Programms and their function:
+
+trackui.pl: (for joystick and gamepad)
+  Using this command you may record moves of you models servos. It processes on
+  demand all mp3 files from the directory that has been passed as parameter 
+  during program start. To ease the use a quasi graphical user interface is in
+  use (curses), that also works over a terminal program (for example putty). 
+  
+  Depending on complexity of a model or a puppet, movements will be generally 
+  aquired sequentially. Probably nobody may control all servos simultaneously, 
+  so a correct movement results.
+  By using the user interface it's possible to combine movements. For example
+  several servos may execute the exactly the same movement. The movement 
+  control of a servo group may be assigned to a joy stick axis. This is for 
+  example necessary if a puppet has seperate servos for each eye lid. You don't
+  want to record each lid seperately but record them togehter because they 
+  almost move together. If for an exception one lid shall be moved different
+  from the other, you may record one eye lid in a subsequent record cycle by
+  just defining a limited time range, instead of the complete number of movement
+  steps within a single MP3 file. Depending on the number of servos and the 
+  complexity of your movements, you may repeat recording as often as you like    
+  with servos activated or de-activated as you need, until the movement fits to
+  the sound as desired.
+   
+  control elements of trackui.pl:
+  Section File:
+  Here you select the file (.svo/.mp3) to process. Usually you will process the 
+  files defined by passing a folder as a program start parameter. 
+  With << Prev Next >> you may move through the folder. The requirement is alway
+  an existing MP3 file. For this file a belonging .svo file will be created or
+  modified. If a .svo file already exists this may be output or modified.
+  With the double arrows you may move in steps of 10 files. This is helpful if
+  you want to navigate to a desired file quickly, because solution dependent,
+  processing single files may be impossible or pedestrian. 
+  Save saves the .svo file finally.
+
+  Operation elements on the joy stick:
+  Key right: starts recording or viewing (trigger).
+  Key left: stops recording and returns to the menu.
+
+  Section Channel X:
+  Here you may activate the servos, that shall be recorded during the cycle by
+  moving the joy stick X-direction. By activating one or more check boxes the 
+  servos will be bound to the Joy stick axis for a subsequent recording walk
+  trough. After the walk trough you may select other servos and make a new walk
+  trough. Not selected servos remain then unaffected. You almost  activate only
+  one servoi at a time, but several may be selected. These will then be moved
+  and recorded simultaneously.
+
+  Section Channel Y:
+  Like Channel X, but here the Y-direction of the joy stick will be used for 
+  controlling.
+
+  Track Sets:
+  A track contains all movement steps that corrospond to a mp3's play duration.
+  In the default setting, movements will be recorded every 50 ms (20Hz). A 20 
+  second MP3 results then in 400 movement way points. 
+  Start at move: Is the start time of a record in steps of "$ConfigL::stepwidth" 
+  Stop at move: Is the stop time in steps of "$ConfigL::stepwidth" Using these 
+  fields only a fraction of the mp3 time may be recoreded or viewed.
+  The Check box 'Update "maximum Move" field at the end of the mp3' controls
+  that after the MP3 has finished the number of movements at the end will 
+  be noted in field "Maximum move:" After reloading a new MP3 where no .svo
+  file exists, the box will be checked automatically, so the determination
+  of their maximum number of moves will take place with the first recording, 
+  after it will be unchecked automatically. This process can be repeated 
+  manually at any time by checking the box and a subsequent recording till the
+  MP3 ends. The Check box 'record or output all moves independent of Start and
+  Stop moves' allows to output or record for the complete time range from start
+  to the end of the mp3. This is helpful, if you want to limit the recording
+  time to a fraction of the whole mp3 length, but want to see the results within
+  the full time range. Then you can toggle recording/viewing time by setting the 
+  checkbox. 'Start at move' and 'Stop at move' fields are also used in 
+  conjunction with the 'Copy Servos' section. Here they limit the fields to be 
+  copied.
+
+  Copy Servos:
+  Here you may copy already captured movements to other servos. The copying 
+  process respects the values in 'Start at move' and 'Stop at move' and copies
+  only the range specified. This is helpful if you want to copy only the moves
+  within a certain time slice of a complete servo track. With the 'Copy' button
+  you start copying the defined ranges. It is possible to copy serveral servos 
+  at once by definig a servo range using the 'From svo:' and the 'Till:' fields.
+  The range spans the number of servos to copy. The servos within the span then
+  will be copied to the destination in the 'To:' field. The 'To' field is the
+  first position to copy to. Other servos in the span will be copied to 
+  subsequent servo numbers, until all servos within the span are copied.
+  Overlapping servos and/or movements are not a problem, since the content is
+  buffered before writing. It is also possible to 'shift moves' within movement
+  sets of servos by a arbitrary number of steps in either direction, indicated
+  by a positive or negative number. It is possible to set the ranges for servos
+  and also for Start and Stop moves to decending or ascening. Accordingly the 
+  reading of the range is swapped, which results in an output of the movements
+  in the opposite direction. For example if you set Field "From svo:" to 10 and 
+  the 'To:' field to 4' and 'To move:' to 14, The content of Servo 10 goes to 
+  servo 14, 9 to 15, 8 to 16 and so on. The same applies to 'Start at move:' 
+  and 'Stop at move'. All copy, movement and shift steps may be done in one go.
+  The processes do not interfere each other. Checkbox 'Rotate exceeding moves' 
+  makes sure, moves, that exceed one end, will be rotated to the other end. 
+  For example if you shift the complete range of moves by +100 and you have a 
+  'Maximum Move:' value of 550, (Start=0,Stop=550, all moves will be shifted 
+  by that number of steps, means move 550 becomes 99 (because wrapped around)
+  and move 0 becomes 100. OK, copying this way may be a little confusing, but
+  may save you a lot of time. In addition it is possible to invert the servo
+  movement direction during the copy process using the check box "invert". 
+ 
+  Process:
+  Record starts a recording according to the servo activation. Not activated
+  servos will be played only. All servos de-activated is the same like 'view'
+  View outputs a MP3 and movements only.
+  'View all servos' when active, shows all servo movement values of all servos.
+  'View all servos' when inactive shows only the servo values of the activated 
+  servos in the servo section. This helps often to keep the overview, when many
+  servos are configured.
+
+  Process: Fill
+  You may fill movements within servo movements with a value vector. When you 
+  click onto 'Fill' all acctivated Servos will be filled with the vector 
+  defined using the fields 'Fill move:','Value:','To Move:','Value:'. 
+  For example, if you put here 100 0 400 1000, Move 100 in the selected servo(s)
+  will get value 0, Move 400 will get value 1000 and for example move 150 will 
+  get 500 and each move in between gets a different value along the vector 
+  from 0 to 1000. Also here vectors may be ascending, descending on may remain
+  the same over the complete range, depending on your settings.
+  
+  Status:
+  Here useful program messages will be shown.
+  
+  The program exits with Ctrl-Q
+
+  Tips for the screen settings of trackui.pl:
+  To ease the operation of the servo teaching process according to music, you
+  may adapt the number of shown servos in the interface in one row, according 
+  to your terminal screen size. On a big screen you may have more servos in a
+  row on a smaller screen you may need to reduce the number of servos in a row 
+  to fit into the screen. If not all defined servos fit into one row, the 
+  interface puts the remaining servos into a new tab or notebook. Depending on
+  the overall number of servos defined, the number of notebooks may be up to 8.
+  To toggle trough the notebooks (servo pages) press button PgUp or PgDn on 
+  your keyboard. To set the number of servos per page you need to modify the 
+  parameter "$num_servos_per_row" in Modules/ConfigL.pm If you get the message 
+                   "The sceen is currently too small .."
+  try to reduce this value, use a larger screen or use a smaller terminal font.
+ 
+  Important Note:
+  If you once created a servo (.svo) file the number of servos cannot be 
+  increased any more via the config file Modules/ConfigL.pm To increase the
+  nuber of servos you need to delete the .svo file manually. So it is a good 
+  idea to consider the number of servos you need before starting with recording.
+  
+
+live.pl
+  This program outputs during the presentation the sound along with the 
+  recorded movements. The sorting of the files follows the ASCII sequence.
+  
+  The program will be only controlled using the four buttons of the control
+  button panel. The joy stick is not needed and normally disconnected.
+
+  Button 1:
+  Start of the first sequence or switching to the next sequence.
+
+  Button 2:
+  Start of the previous sequence
+
+  Button 3: 
+  Repeats of the previous sequence with output of the repeat prefix sequence 
+  from folder "repeat" of the output directory. If more than one sequence 
+  resides there the following sequence (mp3 file) will be uses as a prefix.
+  The idea is to have a possibility to repeat a sequence if it was for example
+  too loud in the audience to understand.
+
+  Button 4:
+  Outputs the next sequence in folder "extra" of the output directory. 
+  If several sequences are stored there, with each repeat the following sequence
+  will be output. Folder extra  may be just a laugh or a reaction sequence to the 
+  audience.
+
+servokalib.pl (2-channel) and servocalib-single.pl (1-channel) 
+  This program is used for a first test of new servos and to determine the
+  servo and joy stick parameters. It is more or less self explaining. Here you
+  need to have the joy stick or a gamepad connected.
+
+  Operation elements on the joy stick:
+  Key right: switches the joy stick to the next servo.
+  Key left: switches the joy stick to the previous servo.
+ 
+
+X-pos(0-4096)   |Y-Pos(0-4096)  |Joystick X |Joystick Y |Servo 0    |Servo 1
+-----------------------------------------------------------------------------
+2714            | 1602          | 460       | 317       | 438       | 307
+
+  In file  Modules/ConfigL you need to enter the limits - see the hints in the
+  file itself.
+
+backup
+  Shell script that saves the actual configuration as a tar ball in: 
+  /usr/local/backup 
+
+activate_autostart
+  running this once under Linux systems using systemd services, the program 
+  live.pl will be started automatically after booting. This is helpful if no
+  terminal is connected to the raspi.
+  runs only on distributions that support systemctl.
+
+deactivate_autostart
+  De-activates the automatic boot into live.pl 
+  
+cksum
+  helper file that checks the file integrity of .svo files.
+
+gamepad.pl
+  helper program to figure out the button and axis numbers of a new gamepad.
+
+Record tips:
+  Create your audio files with a longer silence at the end. So the puppet may
+  continue to move while the puppet player responds. When the button for the 
+  next sequence will be pressed, the current will be stopped immediately and 
+  the subsequent one starts. Better record the model movements a bit longer, so
+  the puppet does not look "static" in speech pauses. 
+
+------------------------------------------------------------------------------
+Configuration:
+After installation parameters perhaps need to be modified, before you may start
+with playing or recording. 
+
+Setting up program parameters:
+$use_gamepad=1;            - if 1 the gamepad will be used as input device if 0 
+                             the self made joystick
+$joystick_device=0;        - The linux joystick hardware device - 1 or 0
+Serialport ($serialport)   - According to the hardware in use.
+i2c port ($i2cport)        - According to the hardware in use.
+i2c Adress ($i2c_address)  - According to the address in use. (tip: detect with
+                             i2cdetect )
+$stepwidth=50000000        - the refresh rate in ns (Nanoseconds) at which 
+                             moves will be captured and output. Defaults to
+                             50 ms or 20Hz
+
+
+Setting up the number of servos in use:
+Edit file: /usr/local/bin/Modules/ConfigL.pm
+Change the entry:
+$num_servos=57;                      # number of servos in use - not limited
+Of course you need these Servos attached.
+
+Setting the refresh rate of the servos (how often a new movement paramete will 
+bes sent to the servo). The cycle time is in ns (Nanoseconds) the default is 
+50000000 this is a frequency of 20 Hz
+To change the default, change parameter $stepwidth=50000000; in File ConfigL.pm
+Please note, that the stepwidth will be overwritten during the loading of a 
+servo (.svo) file. In other words as long as you have a svo file, the parameter
+in the ConfigL.pm has no effect. To change the refresh rate, you need to delete
+the .svo file and restart trackui.pl or load a svo file with a different refresh
+rate. 
+
+Setting up the joy stick.
+Assume a joy stick delivers at minimum position a value of 123 and 855 at
+maximum. By entering these values into ConfigL.pm, these values will be
+converted internally into 0 to 4096. If you move the stick to minimum a inner
+value of 0 will be used and if the stick goes to maximum a inner value of 4096.
+Adapt in ConfigL values:
+  $joystick_x_start $joystick_y_start $joystick_x_end $joystick_y_end (joystick)
+  $gamepad_x_start $gamepad_y_start $joystick_x_end $joystick_y_end (gamepad)
+
+For a gamepad the following parameters define the button and axis assignments,
+for later use of the controls:
+
+$gamepad_start=0;                               # define which gamepad button starts
+$gamepad_stop=1;                                # define gamepad button that stops
+$gamepad_axis_y=1;                              # define the gamepad axis y
+$gamepad_axis_x=2;                              # define the gamepad axis x
+
+The referring numerical values will be displayed within gamepad.pl. So this helps 
+to figure out which button has which number.
+
+Setting up a servo:
+With servos we have the following parameter sets:
+1. The whole possibe movement range of a servo (not mounted in the model).
+   This is used to parametrize the servo type so when running servocalib.pl,
+   the servo is already preset and reacts accordingly.
+   (servolimit start + servolinit end)
+2. The possible movement range within the model.
+   This is used to limit the servo movement inside the model in its mechanical
+   limits, so the servo does not try to overrun the mechanics. 
+   (servostart + servoend)
+3. The movement direction. (1 or 0).
+   O outputs the movement like the joy stick.
+   1 inverts the movement opposite to the joy stick 
+3. Servolabel: Here you may enter a text that later names the servo in trackui.pl
+
+Tips for setting up:
+- In any case prevent the servo from trying to exceeds its mechanical limits. 
+  Especially cheap servos like SG90 don't appreciate that and burn trough.
+- First set up the joy stick using servocalib (without connecting servos) and
+  then set up ConfigL.pm. Check in a second run, if you reach 0-4096. 
+- Only then connect !one! servo that is not mounted in your model, put the stick
+  to the middle, determine the limits and enter them into ConfigL.pm at the 
+  positions for servolimit_start and servolimit_end.
+- now re-run servocalib.pl and check, if the servo just moves to its limits  
+  when you move your joystick fully to the maximum and minimum. A servo value of 0
+  must move the servo to its first limit and a servo value of 4096 must move the 
+  servo to its opposite limit. If this is working nicely withot gaps or overruns, 
+  the servo limits are correct. Usually servos of the same type have about the same
+  limits, so taking over the values from one servo definition to the other servos 
+  is normally possible.
+- Now place the servo into your model and re-run servocalib. Determine the 
+  mechanical limits of your model for this particular servo. Once you have the two
+  limits, enter them into ConfigL in the fields for Servostart and Servoend.
+- following this procedure allows you to change a servo to a different type without 
+  the need to re-capture existing movement files. So it is worth to be exact at 
+  this point. By re-adapting just the four limits later, you can replace servos and 
+  movements sequences and keep existing movement files. In other words movements 
+  become normalized.
