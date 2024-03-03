@@ -1,0 +1,13 @@
+[Unit]
+Description=process for the talking puppet
+
+[Service]
+ExecStart=/usr/local/bin/bechele/live.pl /home/bechele3
+ExecReload=/usr/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+RestartSec=30
+After=final.target
+
+[Install]
+WantedBy=multi-user.target
