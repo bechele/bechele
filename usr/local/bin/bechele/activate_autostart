@@ -1,3 +1,22 @@
 #!/usr/bin/sh
+# Version 3.0 Rolf Jethon (2026)
+if [ ! -f "/usr/lib/systemd/system/runlive.service" ]; then 
+  sudo tee /usr/lib/systemd/system/runlive.service << 'EOF'
+[Unit]
+Description=process for the talking puppet
+
+[Service]
+ExecStart=/usr/local/bin/bechele/live.pl /home/bechele3
+ExecReload=/usr/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+RestartSec=30
+After=final.target
+
+[Install]
+WantedBy=multi-user.target
+EOF
+fi
+
 systemctl enable runlive
 systemctl start runlive

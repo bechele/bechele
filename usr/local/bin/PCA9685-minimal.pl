@@ -19,7 +19,7 @@ use RPi::MultiPCA9685 qw(init_PWM setChannelPWM);
 
   my $num_servos=40;            # make sure the number of value pairs in the array does not exceed this value
   my $i2c_freq=50;              # The frequency of the PWM signal in Hz
-  my $i2cport="/dev/i2c-1";     # The I2C port device 
+  my $i2cport="/dev/i2c-0";     # The I2C port device 
   my $i2c_address=0x40;         # The I2C address of the first PCA9685 Chip. If you exceed the number of addressable Channels per chip,
                                 # the next chip will be used (i2c_address + 1)
   my $currentservo=0;           # The first servo or LED where you want to change the PWM. Can be any number from 0 to $num_servos.

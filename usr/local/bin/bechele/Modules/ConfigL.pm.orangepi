@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #   Settings file for servo and application specific limits
-#   Copyright (C) <2015>  <Rolf Jethon>
+#   Copyright (C) <2015-2026>  <Rolf Jethon>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -16,12 +16,20 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package ConfigL;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
+
+sub get_vars { 
+  return($netport,$sendtonet,$sendtopca,$use_gamepad,$joystick_device,$serialport,$waittime_serial,$i2cport,$pwm_res,$i2c_address,$i2c_freq,$debug,$servores,$num_servos,$stepwidth,$play_full_mp3,$mp3loop,$block_popup_width,$matrix_popup_width,$max_out_pins,$dboutlist,$joystick_x_start,$joystick_x_end,$joystick_y_start,$joystick_y_end,$gamepad_start,$gamepad_stop,$gamepad_axis_y,$gamepad_axis_x,$gamepad_x_start,$gamepad_x_end,$gamepad_y_start,$gamepad_y_end,$num_servos_per_row,$OE,$NEXT,$PREV,$S1,$S2,$SHUT,$servosettings);
+}
 # common configuration file
 #--------------------------------- globally used constants ---------------------------------
+$netport=7625;                                  # the network port nodes are listening to - change only if you also recompile the nodes
+$sendtonet=1;                                   # Output the moves to network devices via broadcast
+$sendtopca=0;                                   # Output the moves to a directly connected PCA9685 PWM chip
 $use_gamepad=0;                                 # 0= serial joystick 1= usb gamepad
 $joystick_device=0;                             # joystick 0 or 1 - only if gamepad is active
 $serialport="/dev/ttyS3";                       # serial port to read the joystick from
+$waittime_serial=12000000;                      # wait for 12 ms (12000000 ns)
 $i2cport="/dev/i2c-0";                          # i2c port to send the servo movements to
 $pwm_res=4096;                                  # the resolution of the PCA9685 PWM
 $i2c_address=0x40;                              # the I2C Address of the first PWM Board - subsequent PCBs automatically  +1
@@ -30,15 +38,22 @@ $debug=0;                                       # debug mode switch
 $servores=4096;                                 # the virtual resolution of the servos
 $num_servos=64;                                 # number of servos in use
 $stepwidth=50000000;                            # use a refresh rate of 50 ms (50000000 ns / 20 Hz)
+$play_full_mp3=0;                               # If 1 the mp3 plays till the end - no switch to the next mp3 on button press 
+$mp3loop=0;                                     # after last mp3 - what to do - loop or stay with the last file
+$block_popup_width=90;                          # The width for the block popup window
+$matrix_popup_width=120;                        # The width for the matrix popup window
+$max_out_pins=16;                               # Number of output pins for network PWM devices
+$dboutlist="/tmp/dbout_";                       # File database output list is written to
 #------- only relevant if joystick is in use ---------------
-$joystick_x_start=130;                          # The joystick x mechanical start limit value
-$joystick_x_end=628;                            # The joystick x mechanical end limit value
-$joystick_y_start=130;                          # The joystick y mechanical start limit value
-$joystick_y_end=618;                            # The joystick y mechanical end limit value
+$joystick_x_start=0;                            # The joystick x mechanical start limit value
+$joystick_x_end=939;                            # The joystick x mechanical end limit value
+$joystick_y_start=0;                            # The joystick y mechanical start limit value
+$joystick_y_end=939;                            # The joystick y mechanical end limit value
+#use these values for joystick calibration:
 #$joystick_x_start=0;                           # The joystick x mechanical start limit value
-#$joystick_x_end=2048;                          # The joystick x mechanical end limit value
+#$joystick_x_end=1024;                          # The joystick x mechanical end limit value
 #$joystick_y_start=0;                           # The joystick y mechanical start limit value
-#$joystick_y_end=2048;                          # The joystick y mechanical end limit value
+#$joystick_y_end=1024;                          # The joystick y mechanical end limit value
 #------- only relevant if gamepad is in use ---------------
 $gamepad_start=0;                               # define which gamepad button starts
 $gamepad_stop=1;                                # define gamepad button that stops
@@ -78,34 +93,35 @@ $SHUT=2;                                        # pin 7  SHUT Button
 # servolimit is the mechanical stop limit of the servo itself, that must not be exceeded
 # servostart and servoend (min. 0 - max. $servores) is the mechanical limit within the application that must not be exceeded
 # label refelects the servo function within the application
-# The value range of "Servostart","Servoend","servolimit start" and "servolimit end" is 0 to 4096 
+# The value range of "Servostart","Servoend","servolimit start" and "servolimit end" is 0 to 4096
 # If you want to address more than 64 servos, you need to extend the array below accordingly
 # read also the README file in /usr/local/bin for details
-$servosettings=[[380,400,0,170,600,'Servo 0'],                      # Servo 0 
-                [380,400,0,170,600,'Servo 1'],                      # Servo 1
-                [380,400,0,170,600,'Servo 2'],                      # Servo 2
-                [380,400,0,170,600,'Servo 3'],                      # Servo 3
-                [380,400,0,170,600,'Servo 4'],                      # Servo 4
-                [380,400,0,170,600,'Servo 5'],                      # Servo 5
-                [380,400,0,170,600,'Servo 6'],                      # Servo 6
-                [380,400,0,170,600,'Servo 7'],                      # Servo 7
-                [380,400,0,170,600,'Servo 8'],                      # Servo 8
-                [380,400,0,170,600,'Servo 9'],                      # Servo 9
-                [380,400,0,170,600,'Servo 10'],                     # Servo 10
-                [380,400,0,170,600,'Servo 11'],                     # Servo 11
-                [380,400,0,170,600,'Servo 12'],                     # Servo 12
-                [380,400,0,170,600,'Servo 13'],                     # Servo 13
-                [380,400,0,170,600,'Servo 14'],                     # Servo 14
-                [380,400,0,170,600,'Servo 15'],                     # Servo 15
-                [380,400,0,170,600,'Servo 16'],                     # Servo 16
-                [380,400,0,170,600,'Servo 17'],                     # Servo 17
-                [380,400,0,170,600,'Servo 18'],                     # Servo 18
-                [380,400,0,170,600,'Servo 19'],                     # Servo 19
-                [380,400,0,170,600,'Servo 20'],                     # Servo 20
-                [380,400,0,170,600,'Servo 21'],                     # Servo 21
-                [380,400,0,170,600,'Servo 22'],                     # Servo 22
-                [380,400,0,170,600,'Servo 23'],                     # Servo 23
-                [380,400,0,170,600,'Servo 24'],                     # Servo 24
+$servosettings=[[203,390,0,170,603,'EyeRight left/right'],          # Servo 0 
+	        #[150,700,0,150,700,'only for servo calibration'],   Set these values to do the first Servo calibration within servocalib.pl to determine the servo type limits
+                [270,415,0,170,600,'EyeLeft left/right'],           # Servo 1
+                [211,578,1,170,600,'EyeRight up/down'],             # Servo 2
+                [208,530,1,170,600,'EyeLeft up/down'],              # Servo 3
+                [248,531,1,170,600,'LidRight'],                     # Servo 4
+                [239,540,1,170,600,'LidLeft'],                      # Servo 5
+                [177,507,0,170,600,'EyeAngle'],                     # Servo 6
+                [170,450,0,170,600,'Mouth up/down'],                # Servo 7
+                [170,591,1,170,600,'Mouth width'],                  # Servo 8
+                [170,600,0,170,600,'Head rotation'],                # Servo 9
+                [180,453,1,170,600,'Head left/right'],              # Servo 10
+                [186,550,0,170,600,'Head forwar/back'],             # Servo 11
+                [251,469,0,170,600,'EyeRight left/right'],          # Servo 12
+                [304,450,0,170,600,'EyeLeft left/right'],           # Servo 13
+                [179,497,1,170,600,'EyeRight up/down'],             # Servo 14
+                [196,479,1,170,600,'EyeLeft up/down'],              # Servo 15
+                [264,578,1,170,600,'LidRight'],                     # Servo 16
+                [222,566,1,170,600,'LidLeft'],                      # Servo 17
+                [202,516,0,170,600,'EyeAngle'],                     # Servo 18
+                [211,600,0,170,600,'Mouth up/down'],                # Servo 19
+                [170,591,1,170,600,'Mouth width'],                  # Servo 20
+                [210,577,0,170,600,'Head rotation'],                # Servo 21
+                [257,509,0,170,600,'Head left/right'],              # Servo 22
+                [203,538,1,170,600,'Head forwar/back'],             # Servo 23
+                [380,400,2,170,600,'Relay0,Relay1,Relay2,Relay3,Relay4,Relay5,Relay6,Relay7,Relay8,Relay9,Relay10,Relay11,Relay12,Relay13,Relay14,Relay15'],                     # Servo 24
                 [380,400,0,170,600,'Servo 25'],                     # Servo 25
                 [380,400,0,170,600,'Servo 26'],                     # Servo 26
                 [380,400,0,170,600,'Servo 27'],                     # Servo 27

@@ -1,481 +1,684 @@
 Dies ist die Dokumentation zum Projekt bechele.de
-Weitere Infos unter www.bechele.de
+Weitere Informationen unter www.bechele.de
 Autor Rolf Jethon
 
-bechele,de ist ein Raspberry Pi-Projekt, mit dem Sie Bewegungsmodelle wie 
-Handpuppen, Tanzpuppen oder Tierroboter mit gleichzeitiger Ausgabe von
-Audiodaten und Servobewegungen erstellen können, um diese Modelle ohne 
-Programmieraufwand zum Leben zu erwecken.
+bechele.de ist ein Raspberry-Pi-Projekt, das es ermöglicht, Bewegungsmodelle
+wie Handpuppen, Tanzpuppen oder Tierroboter oder sogar ganze Gruppen von
+Charakteren mit gleichzeitiger Ausgabe von Audiodaten und Servobewegungen zu
+erstellen, um diese Modelle zum Leben zu erwecken, ohne programmieren zu müssen.
 
-Anstelle eines Raspberry Pi kann ein OrangePi-PC oder ein anderer Raspberry
-Pi-ähnlicher Linux-basierter Mikrocomputer verwendet werden. Für Raspberry Pi
-und OrangePi PC sind separate SD-Karten-Images vorhanden.
+Anstelle eines Raspberry Pi kann ein OrangePi PC oder ein anderer Raspberry-Pi-
+ähnlicher Linux-basierter Mikrocomputer verwendet werden - Für Raspberry Pi und
+OrangePi PC existieren separate SD-Karten-Images.
 
-Alle erforderlichen Projektskripte befinden sich im Ordner 
-/usr/local/bin/bechele.
+Alle benötigten Projektskripte befinden sich im Ordner /usr/local/bin/bechele.
 
-Grundlagen:
-Um einen Bewegungsroboter synchron zu Musik oder Sprache zu bewegen, ist es
-erforderlich, die Bewegung in irgendeiner Weise entsprechend dem Ton
-hinzuzufügen. In diesem Projekt geschieht dies durch manuelles Bewegen eines
-Joysticks synchron zum Ton. Gleichzeitig werden die Bewegungen an die Servos
-ausgegeben, um die Ergebnisse im laufenden Betrieb überprüfen zu können. Die
-Anzahl der Aufnahmekanäle wird nicht durch Software, sondern durch Chip-Timing
-und Hardware begrenzt. Es gibt ein Hardware-Limit von maximal 64 
-PCA9685-Karten. Eine weitere Grenze ist das Chip-Timing zur Ansteuerung aller
-Servos. Das Timing hängt von der Bildwiederholfrequenz der Bewegungen ab.
-Derzeit beträgt diese 50 ms bzw. 20 Hz. Bei einer Bildwiederholfrequenz von 
-20 Hz können maximal ca. 120 Servos angesprochen werden. Wenn Sie mehr Servos
-ansprechen müssen, müssen Sie die Aktualisierungsrate ändern, sonst bleibt 
-nicht genügend Zeit, um alle Servos einzustellen. Im Falle der Beispielpuppe
-beträgt die Anzahl der verwendeten Servos nur 8. Diese Einschränkung ist nur
-zufällig und keine Grenze für andere Projekte. Da mit einem Joystick nur zwei
-Kanäle aufgezeichnet werden können, muss die Aufzeichnung aller Kanäle
-nacheinander erfolgen. Im Fall von Herrn Bechele habe ich zunächst die
-Mundbewegung gemäß der Sprach-Audio-MP3-Datei aufgezeichnet. Da die
-Mundbewegungen sehr schnell sind, ist volle Konzentration erforderlich, um ein
-mehr oder weniger genaues Ergebnis zu erzielen. Deshalb habe ich nur einen
-Kanal aufgenommen, obwohl ich zwei Kanäle zur Verfügung hatte. Dann habe ich
-die Bewegung des Augenlids ebenfalls nur mit einem Kanal aufgezeichnet, aber
-mit zwei aktivierten Servos in derselben (x)-Richtung. Schließlich habe ich die
-Augenbewegung mit zwei Kanälen gleichzeitig aufgezeichnet. Die Audiodaten
-wurden in einzelne kurze Abschnitte unterteilt, um dem Puppenspieler eine
-Reaktion in den Sprechpausen zu ermöglichen. Nach Abschluss der Aufnahme
-können Audiodaten und Bewegungen per Knopfdruck Schritt für Schritt ausgegeben
-werden, so dass der Zuschauer den Eindruck hat, dass die Puppe tatsächlich mit
-dem Puppenspieler spricht.
-  
+Grundlagen
+Um einen Bewegungsroboter synchron zur Musik oder Sprache laufen zu lassen,
+müssen die Bewegungen passend zum Ton hinzugefügt werden. In diesem Projekt
+geschieht dies, indem ein Joystick von Hand synchron zum Ton bewegt wird.
+Gleichzeitig werden die Bewegungen an die Servos ausgegeben, um die Ergebnisse
+sofort überprüfen zu können. Die Anzahl der Aufnahmekanäle ist nicht durch die
+Software begrenzt, sondern durch eine Reihe von Umgebungsbedingungen, da die
+neueste Version die Verwendung von Netzwerkgeräten für Servo- und Relais-Ausgabe
+zusätzlich zu den PCA9685-Geräten erlaubt. Für die PCA9685-Geräte gibt es eine
+Hardwaregrenze von maximal 64 PCA9685-Boards. Für Netzwerkgeräte gibt es andere
+Grenzen: Für 1 Netzwerkpaket von 1432 Byte können etwa 700 Servos angesprochen
+werden und etwa 11000 Relais. Eine weitere Grenze ist die Chip-Zeitsteuerung
+zum Ansprechen aller Servos. Die Zeit hängt von der Aktualisierungsrate der
+Bewegungen ab. Derzeit beträgt diese 50 ms oder 20 Hz. Mit 20 Hz Aktualisierungs-
+rate können maximal etwa 120 Servos über die PCA9685-Geräte angesprochen werden.
+Für Netzwerkgeräte gibt es keine solche Zeitbegrenzung, wenn man keine höheren
+Aktualisierungsraten benötigt. Wenn man mehr Servos ansprechen will, muss die
+Aktualisierungsrate geändert werden, sonst reicht die Zeit nicht, alle Servos
+zu setzen. Im Beispiel der Puppenköpfe beträgt die Anzahl der verwendeten Servos
+nur 24. Diese Begrenzung ist nur zufällig und keine Grenze für andere Projekte.
+Da mit einem Joystick nur zwei Kanäle aufgezeichnet werden können, muss die
+Aufnahme aller Kanäle sequentiell erfolgen. Bei meinen Beispielen habe ich zuerst
+die Mundbewegungen entsprechend der Sprach-Audio-MP3-Datei aufgezeichnet. Da
+Mundbewegungen sehr schnell sind, erfordern sie volle Konzentration, um ein
+einigermaßen genaues Ergebnis zu erzielen. Daher habe ich nur einen Kanal
+aufgezeichnet, obwohl zwei verfügbar waren. Dann habe ich die Augenlidbewegung
+ebenfalls nur mit einem Kanal, aber mit zwei gleichzeitig aktivierten Servos
+(in X-Richtung) aufgezeichnet. Schließlich habe ich die Augenbewegung mit zwei
+Kanälen gleichzeitig aufgezeichnet. Die Audiodaten wurden in kurze Abschnitte
+unterteilt, damit der Puppenspieler in den Sprechpausen reagieren kann. Nach
+Abschluss der Aufnahme können Audio- und Bewegungsdaten schrittweise durch
+Drücken einer Taste ausgegeben werden, sodass das Publikum den Eindruck hat,
+dass die Puppe wirklich mit dem Puppenspieler spricht.
+
 Arbeitsprinzip:
 Ein Bewegungssatz besteht immer aus einer MP3-Sounddatei und einer .svo-Datei,
 die die Bewegungsinformationen für die Servos enthält. Optional kann eine
-gleichnamige Textdatei existieren, die Texthinweise für den Puppenspieler
-enthält, falls Sie nicht alle Dialoge auswendig lernen möchten. Dieser Text
+Textdatei mit demselben Namen existieren, die Texthinweise für den Puppenspieler
+enthält - falls Sie nicht alle Dialoge auswendig lernen möchten. Dieser Text
 wird dann im Terminalfenster angezeigt, von dem aus Sie das Programm gestartet
-haben. In der ersten Version des Projekts wurden die Positionen des Joysticks
-direkt an die Servos weitergegeben. Dabei musste der Wertebereich des Joysticks
-genau mit den Servopositionswerten übereinstimmen. Dies hatte folgende
-Nachteile:
-- Der gesamte Bewegungsbereich des Servos musste für das Servo möglich sein.
+haben.
+
+In der ersten Version des Projekts wurden die Positionen des Joysticks direkt
+an die Servos weitergegeben. Dabei musste der Wertebereich des Joysticks genau
+mit den Servopositionswerten übereinstimmen. Dies hatte folgende Nachteile:
+- Der gesamte Bewegungsbereich des Servos musste für den Servo möglich sein.
 - Verschiedene Servotypen konnten nicht kombiniert werden, wenn die Parameter
   unterschiedlich waren.
-- Nach der Änderung mechanischer Parameter eines Servos oder Joysticks war eine
+- Nach Änderung mechanischer Parameter eines Servos oder Joysticks war eine
   mechanische Neukalibrierung erforderlich.
-- Mechanische Änderungen erforderten eine Neuaufnahme der betreffenden
-  Bewegungen.
-Daher werden Joystick-Bewegungen sowie Servobewegungen in der Datei ConfigL.pm
-auf einen Bereich von 0 bis 4096 parametrisiert und normiert. Wenn
-beispielsweise eine Mundbewegung einer Puppe realisiert wurde, so dass 2/3 des
-möglichen Winkelbereichs des Servos genutzt wurden und nach einer mechanischen
-Änderung nur die Hälfte des Winkelbereichs benötigt wird, kann eine vorhandene
-Bewegungsdatei wiederhergestellt und durch Anpassung der Servoparameter
-unverändert weiterverwendet werden. Gleiches gilt, wenn sich der Joystick
-ändert. Die Positionen von 0 bis 4096 in einer Bewegungsdatei enthalten den
-gesamten möglichen mechanischen Bewegungsbereich des Servos im Modell. Mit
-anderen Worten: Das Servo versucht im Modell bei korrekter Parametrierung
-nie, seine mechanischen Grenzen zu überschreiten.
+- Mechanische Änderungen erforderten eine Neuaufnahme der betreffenden Bewegung.
+Daher werden Joystickbewegungen sowie Servobewegungen in der Datei ConfigL.pm
+parametrisiert und auf einen Bereich von 0 bis 4096 normalisiert. Wenn zum
+Beispiel eine Mundbewegung einer Puppe realisiert wurde, sodass 2/3 des möglichen
+Winkelbereichs des Servos genutzt wurden und nach einer mechanischen Änderung
+nur die Hälfte des Winkelbereichs benötigt wird, können vorhandene Bewegungs-
+dateien ohne Änderung wiederverwendet werden, indem die Servoparameter angepasst
+werden. Das Gleiche gilt, wenn der Joystick geändert wird.
+Die Positionen von 0 bis 4096 in einer Bewegungsdatei enthalten den kompletten
+mechanisch möglichen Bewegungsbereich des Servos im Modell. Mit anderen Worten:
+Der Servo - trotz korrekter Parametrierung - versucht niemals, seine mechanischen
+Grenzen im Modell zu überschreiten.
 
--------------------------------------------------- --------------
-
+Neu eingeführte Netzwerkgeräte:
+Mit der neuesten Software 3.0 unterstützt die Bechele-Software nun neben den
+bestehenden PCA9685-PWM-Boards auch Netzwerkgeräte, basierend auf günstigen
+ESP32-Modulen. Jedes Netzwerkgerät kann 16 Servos oder 16 Relais oder eine
+gewünschte Mischung von beidem handhaben. Der gesamte Datentransfer vom Host
+(Raspi) erfolgt per Broadcast-Übertragungen, bei denen alle Geräte (Nodes)
+dieselben Datenpakete erhalten. Entsprechend der Nodekonfiguration nimmt der
+Node die für ihn bestimmten Daten aus dem Paket. So bleibt genug Zeit, um
+700 Servos @ 44 ESP32-Node oder 11000 Relais @ 700 Nodes mit einer 50ms-
+Aktualisierungsrate anzusteuern. Netzwerkgeräte können über Ethernet oder WLAN
+verbunden werden. Ethernet-gesteuerte Nodes sind natürlich stabiler als über
+WLAN.
+------------------------------------------------------------------------------
 Installation:
-Am einfachsten ist es, ein vordefiniertes SD-Karten-Image auf eine SD-Karte zu
-schreiben, und schon kann es losgehen. 
+Der einfachste Weg ist, ein vordefiniertes SD-Karten-Image auf eine SD-Karte
+zu schreiben, und Sie sind fast startbereit. Für diejenigen, die selbst
+installieren möchten, erwartet Sie ein zeitaufwändiger Installationsmarathon:
 
-Wer die Installation selbst durchführen möchte, muss mit einem zeitraubenden
-Installationsmarathon wie folgt rechnen:
-Entpacken Sie den Tar-Ball in / (root) Ihrer Distribution.
+Entpacken Sie den Tarball in / (root) Ihrer Distribution.
 Abhängig von der Linux-Distribution muss einige Software installiert werden.
-Wie man das installiert, hängt von der Distribution ab.
-Man braucht:
-    cpanminus (erforderlich)
-    WiringPi (erforderlich für RaspBerry Pi)
-    git (erforderlich für OrangePi)
-    make (erforderlich für OrangePi)
-    gcc (erforderlich für OrangePi)
-    WiringOP (erforderlich für Orange Pi.) Installation mit:
-       Git-Klon https://github.com/zhaolei/WiringOP.git -b h3
-       danach > cd WiringOP < und dann > ./build <
-       jetzt > echo '/usr/local/lib' >> /etc/ld.so.conf.d/randomLibs.conf <
-       und > ldconfig <
-       Testen Sie mit > gpio readall < alle GPIOs sollten angezeigt werden
-    alsa-utils (erforderlich)
-    mpg123 (erforderlich)
-    i2c-tools (erforderlich)
-    Perl 5 (wahrscheinlich vorinstalliert - erforderlich)
-    perl-device-serialport (erforderlich)
-    libncurses5-dev (erforderlich)
-    libncursesw5-dev (erforderlich)
+Wie diese installiert wird, hängt von der Distribution ab.
 
-Außerdem müssen Sie einige Perl-Module installieren. Am einfachsten ist es,
-Folgendes zu verwenden:
+Sie benötigen:
+   cpanminus (erforderlich)
+   WiringPi (erforderlich für Raspberry Pi)
+   git (erforderlich für OrangePi)
+   make (erforderlich für OrangePi)
+   gcc (erforderlich für OrangePi)
+   WiringOP (erforderlich für Orange Pi - installieren mit:
+      git clone https://github.com/zhaolei/WiringOP.git -b h3
+      danach > cd WiringOP < und dann > ./build <)
+      jetzt > echo '/usr/local/lib' >> /etc/ld.so.conf.d/randomLibs.conf <
+      und > ldconfig <
+      testen mit > gpio readall < alle GPIOs sollten angezeigt werden
+      )
+   alsa-utils (erforderlich)
+   mpg123 (erforderlich)
+   i2c-tools (erforderlich) wenn Sie PCA9685-Geräte verwenden
+   perl 5 (wahrscheinlich vorinstalliert - erforderlich)
+   perl-device-serialport (erforderlich)
+   libncurses5-dev (erforderlich)
+   libncursesw5-dev (erforderlich)
+   gpm
+   libgpm-dev
+
+Weiterhin müssen einige Perl-Module installiert werden - am einfachsten mit:
 cpanm <Modulname>
-Viele Module sind von anderen Modulen abhängig, sodass die Installation eine
-Weile dauern kann.
+Viele Module hängen von anderen Modulen ab, sodass die Installation eine Weile
+dauern kann.
 
-  PERL-MODULE:
-    strict
-    RPi::I2C
-    RPi::MultiPCA9685
-    Device::SerialPort
-    Curses::UI
-    WiringPi::API
-    File::Find::Rule
-    Linux::Joystick
-    Audio::Play::MPG123
-    Time::HR
-    ConfigL (wird mit dem Tarball geliefert und muss nicht installiert werden)
+ PERL-MODULE:
+   strict
+   Socket
+   RPi::I2C
+   WiringPi::API
+   RPi::MultiPCA9685
+   Device::SerialPort
+   Curses::UI
+   Curses::UI::Mousehandler::GPM
+   WiringPi::API
+   File::Find::Rule
+   File::Copy
+   File::Spec
+   File::Temp
+   Text::Table
+   Linux::Joystick
+   Audio::Play::MPG123
+   Time::HR
+   Data::Dump
+   POSIX
+   DBI
+   DBD::SQLite
+   bigfloat
+   ConfigL (Dies ist im Tarball enthalten und muss nicht installiert werden)
 
-Nach der Installation müssen einige Parameter eingestellt werdenm siehe
-Abschnitt Konfiguration.
+Nach der Installation müssen einige Parameter gesetzt werden - siehe Abschnitt
+Konfiguration.
 
+------------------------------------------------------------------------------
 Programme und ihre Funktion:
---------------------------------------------------------------
+
 trackui.pl: (für Joystick und Gamepad)
-Mit diesem Befehl können Sie Bewegungen der Servos Ihres Modells aufzeichnen.
-Es verarbeitet bei Bedarf alle MP3-Dateien aus dem Verzeichnis, das beim
-Programmstart als Parameter übergeben wurde. Um die Bedienung zu erleichtern,
-wird eine quasi grafische Benutzeroberfläche verwendet (Curses), die auch über
-ein Terminalprogramm (z. B. Putty) funktioniert.
-  
-Abhängig von der Komplexität eines Modells oder einer Puppe werden die
-Bewegungen im Allgemeinen nacheinander erlernt. Wahrscheinlich könnte niemand
-alle Servos gleichzeitig steuern, damit sich eine korrekte Bewegung ergäbe.
-Über die Benutzeroberfläche ist es möglich, Bewegungen zu kombinieren.
-Beispielsweise können mehrere Servos die exakt gleiche Bewegung ausführen.
-Die Bewegungssteuerung einer Servogruppe kann einer Joystick-Achse zugewiesen
-werden. Dies ist beispielsweise notwendig, wenn eine Puppe für jedes Augenlid
-separate Servos hat. Sie möchten nicht jedes Lid einzeln aufnehmen, sondern
-beide zusammen, da sie sich fast immer zusammen bewegen. Soll ausnahmsweise
-ein Augenlid anders bewegt werden als das andere, kann man in einem
-nachfolgenden Aufnahmezyklus ein einzelnes Augenlid aufzeichnen, indem nur
-einen begrenzter Zeitbereich definiert wird, statt die komplette Anzahl der
-Bewegungsschritte innerhalb einer einzelnen MP3-Datei zu definieren. Abhängig
-von der Anzahl der Servos und der Komplexität Ihrer Bewegungen, können Sie die
-Aufnahme beliebig oft mit aktivierten oder deaktivierten Servos wiederholen,
-bis die Bewegung wie gewünscht zum Ton passt.
-   
-Bedienelemente am Joystick:
-Taste rechts: Aufnahme bzw. Wiedergabe starten (Trigger).
-Taste links: Stoppt die Aufnahme und kehrt zum Menü zurück.
+  Mit diesem Befehl können Sie Bewegungen Ihrer Model-Servos aufzeichnen. Es
+  verarbeitet auf Anforderung alle MP3-Dateien aus dem Verzeichnis, das beim
+  Programmstart als Parameter übergeben wurde. Zur einfacheren Bedienung wird
+  eine quasi grafische Benutzeroberfläche (curses) verwendet, die auch über ein
+  Terminalprogramm (z.B. putty) funktioniert.
 
-Steuerelemente von trackui.pl:
+  Abhängig von der Komplexität eines Modells oder einer Puppe werden Bewegungen
+  generell sequentiell erfasst. Wahrscheinlich kann niemand alle Servos
+  gleichzeitig kontrollieren, um eine korrekte Bewegung zu erzielen.
+  Durch die Benutzeroberfläche ist es möglich, Bewegungen zu kombinieren. Zum
+  Beispiel können mehrere Servos genau dieselbe Bewegung ausführen. Die
+  Bewegungssteuerung einer Servogruppe kann einer Joystick-Achse zugewiesen
+  werden. Dies ist zum Beispiel notwendig, wenn eine Puppe separate Servos für
+  jedes Augenlid hat. Man möchte nicht jedes Lid einzeln aufzeichnen, sondern
+  zusammen, da sie sich fast gleich bewegen. Wenn für eine Ausnahme ein Lid
+  anders bewegt werden soll als das andere, kann man ein Augenlid in einem
+  anschließenden Aufnahmezyklus aufzeichnen, indem man nur einen begrenzten
+  Zeitbereich definiert, anstatt der kompletten Anzahl von Bewegungsschritten
+  innerhalb einer einzelnen MP3-Datei. Abhängig von der Anzahl der Servos und
+  der Komplexität Ihrer Bewegungen können Sie die Aufnahme so oft wiederholen,
+  wie Sie möchten, mit aktivierten oder deaktivierten Servos, wie benötigt, bis
+  die Bewegung zum Ton passt, wie gewünscht.
 
-Abschnitt File:
-Hier wählen Sie die zu verarbeitende Datei (.svo/.mp3) aus. Normalerweise
-verarbeiten Sie die definierten Dateien, indem Sie einen Ordner als
-Programmstartparameter übergeben. Mit << Prev Next >> können Sie durch den
-Ordner navigieren. Voraussetzung ist immer eine vorhandene MP3-Datei. Für
-diese Datei wird eine zugehörige .svo-Datei erstellt oder geändert. Wenn
-bereits eine .svo-Datei vorhanden ist, kann diese ausgegeben oder geändert
-werden. Mit den Doppelpfeilen können Sie sich in 10er-Schritten bewegen.
-Dies ist hilfreich, wenn Sie schnell zu einer gewünschten Datei navigieren
-möchten, da die Verarbeitung einzelner Dateien je nach Lösung möglicherweise
-unmöglich oder mühsam ist.
+  Bedienelemente von trackui.pl:
+  Abschnitt File:
+  Hier wählen Sie die zu verarbeitende Datei (.svo/.mp3). Normalerweise
+  verarbeiten Sie die Dateien, die durch Übergabe eines Ordners als
+  Programmstartparameter definiert sind.
+  Mit << Vorherige Nächste >> können Sie durch den Ordner navigieren. Die
+  Voraussetzung ist immer mindestens eine vorhandene MP3-Datei. Für diese Datei
+  wird eine zugehörige .svo-Datei erstellt oder modifiziert. Falls eine .svo-
+  Datei bereits existiert, kann diese ausgegeben oder modifiziert werden. Mit
+  den Doppelpfeilen können Sie in Schritten von 10 Dateien springen. Dies ist
+  hilfreich, wenn Sie schnell zu einer gewünschten Datei navigieren möchten, da
+  lösungsabhängig das Verarbeiten einzelner Dateien unmöglich oder mühsam sein
+  kann.
+  Speichern speichert die .svo-Datei endgültig. Der Button "Block_operation"
+  öffnet ein neues Fenster mit Block-Speicher-/Ladeoperationen - siehe Abschnitt
+  "Block operations".
 
-'Save' speichert die .svo-Datei endgültig.
+  Bedienelemente am Joystick:
+  Taste 1: startet Aufnahme oder Wiedergabe (Trigger).
+  Taste 2: stoppt Aufnahme und kehrt zum Menü zurück.
 
+  Track Sets:
+  Der Button "Set_servo_matrix" öffnet ein neues Fenster, in dem Sie definieren
+  können, welche Servos oder Relais verarbeitet werden sollen. Details siehe
+  Abschnitt "Set_servo_matrix".
+  Ein Track enthält alle Bewegungsschritte, die der Abspieldauer einer MP3
+  entsprechen. In der Standardeinstellung werden Bewegungen alle 50 ms (20 Hz)
+  aufgezeichnet. Eine 20 Sekunden lange MP3 ergibt dann 400 Bewegungspunkte.
+  Start bei Bewegung: Ist die Startzeit einer Aufnahme in Schritten von
+  '$ConfigL::stepwidth'.
+  Stopp bei Bewegung: Ist die Stoppzeit in Schritten von '$ConfigL::stepwidths'.
+  Mit diesen Feldern kann nur ein Bruchteil der MP3-Zeit aufgezeichnet oder
+  angezeigt werden.
+  Das Kontrollkästchen 'Update "Maximum Move" field at the end of the mp3'
+  steuert, dass nach Ende der MP3 die Anzahl der Bewegungen am Ende im Feld
+  "Maximum move:" vermerkt wird. Beim Laden einer neuen MP3, für die keine .svo-
+  Datei existiert, wird die Box automatisch angehakt, sodass die Bestimmung
+  ihrer maximalen Bewegungszahl mit der ersten Aufnahme erfolgt, danach wird sie
+  automatisch deaktiviert. Dieser Vorgang kann jederzeit manuell wiederholt
+  werden, indem die Box angehakt und anschließend eine Aufnahme bis zum MP3-Ende
+  gestartet wird.
+  Das Kontrollkästchen 'record or output all moves independent of Start and
+  Stop moves' erlaubt, die Ausgabe oder Aufnahme für den kompletten Zeitbereich
+  vom Start bis zum Ende der MP3 durchzuführen. Dies ist hilfreich, wenn Sie die
+  Aufnahmezeit auf einen Bruchteil der gesamten MP3-Länge begrenzen, aber die
+  Ergebnisse im vollen Zeitbereich sehen möchten. Dann können Sie die Aufnahme-/
+  Wiedergabezeit durch Setzen des Kontrollkästchens umschalten. Die Felder
+  'Start at move' und 'Stop at move' werden auch in Verbindung mit dem Abschnitt
+  'Copy Servos' verwendet. Hier begrenzen sie die zu kopierenden Bereiche.
 
-Abschnitt Channel X:
-Hier können Sie durch Bewegen des Joysticks in X-Richtung die Servos
-aktivieren, die während des Zyklus aufgezeichnet werden sollen. Durch
-Aktivieren eines oder mehrerer Kontrollkästchen werden die Servos für einen
-anschließenden Aufnahmedurchgang an die Joystick-Achse gebunden. Nach dem
-Durchlauf können Sie andere Servos auswählen und einen neuen Durchlauf
-erstellen. Nicht ausgewählte Servos bleiben dann unbeeinflusst. Üblicherweise
-aktiviert man fast immer nur einen Servo auf einmal, es können aber auch
-mehrere ausgewählt werden. Diese werden dann gleichzeitig bewegt und
-aufgezeichnet.
+  Set_servo_matrix:
+  Hier können Sie die Servos aktivieren, die während des Zyklus durch Bewegen
+  des Joysticks in X-Richtung aufgezeichnet werden sollen. Durch Aktivieren
+  eines oder mehrerer Kontrollkästchen werden die Servos für einen anschließenden
+  Aufnahmedurchlauf an die Joystick-Achse gebunden. Nach dem Durchlauf können Sie
+  andere Servos auswählen und einen neuen Durchlauf machen. Nicht ausgewählte
+  Servos bleiben dann unberührt. Sie aktivieren meist nur einen Servo gleich-
+  zeitig, aber mehrere können ausgewählt werden. Diese werden dann gleichzeitig
+  bewegt und aufgezeichnet. Da die Software viele Servos handhaben kann, ist das
+  Fenster in Notebook-Reiter unterteilt. Abhängig von der Servo- und Relais-
+  Definition in ConfigL.pm können Sie mehr als ein Notebook oder sogar viele
+  sehen. Mit der neuen Software 3.0 werden sowohl X- als auch Y-Servo-Bindungen
+  im selben Fenster angezeigt. So ist es letztlich einfacher, den Überblick zu
+  behalten. Wenn Sie mehrere Servos oder Relais gleichzeitig ausgewählt haben,
+  können Sie die Tastenkombination Strg+E verwenden, um alle Kontrollkästchen 
+  gleichzeitig zu löschen.
 
-Abschnitt Channel Y:
-Wie Kanal X, jedoch wird hier die Y-Richtung des Joysticks zur Steuerung
-verwendet.
+  Copy Servos:
+  Hier können Sie bereits erfasste Bewegungen auf andere Servos kopieren. Der
+  Kopiervorgang respektiert die Werte in 'Start at move' und 'Stop at move' und
+  kopiert nur den angegebenen Bereich. Dies ist hilfreich, wenn Sie nur die
+  Bewegungen innerhalb eines bestimmten Zeitabschnitts eines kompletten Servo-
+  Tracks kopieren möchten. Mit dem 'Copy'-Button starten Sie das Kopieren der
+  definierten Bereiche. Es ist möglich, mehrere Servos gleichzeitig zu kopieren,
+  indem Sie einen Servobereich mit den Feldern 'From svo:' und 'Till:' definieren.
+  Die Spanne umfasst die Anzahl der zu kopierenden Servos. Die Servos innerhalb
+  der Spanne werden dann zum Ziel im Feld 'To:' kopiert. Das 'To'-Feld ist die
+  erste Position, zu der kopiert wird. Andere Servos in der Spanne werden auf
+  nachfolgende Servonummern kopiert, bis alle Servos innerhalb der Spanne
+  kopiert sind.
+  Überlappende Servos und/oder Bewegungen sind kein Problem, da der Inhalt vor
+  dem Schreiben gepuffert wird. Es ist auch möglich, Bewegungen innerhalb von
+  Bewegungssätzen von Servos um eine beliebige Anzahl von Schritten in beide
+  Richtungen zu verschieben, angezeigt durch eine positive oder negative Zahl.
+  Es ist möglich, die Bereiche für Servos und auch für Start- und Stopp-Bewegungen
+  absteigend oder aufsteigend zu setzen. Dementsprechend wird das Lesen des
+  Bereichs vertauscht, was zu einer Ausgabe der Bewegungen in der entgegen-
+  gesetzten Richtung führt. Zum Beispiel, wenn Sie Feld "From svo:" auf 10 und
+  das 'To:' Feld auf 4 und 'To move:' auf 14 setzen, geht der Inhalt von Servo
+  10 zu Servo 14, 9 zu 15, 8 zu 16 und so weiter. Das Gleiche gilt für 'Start
+  at move:' und 'Stop at move'. Alle Kopier-, Bewegungs- und Verschiebungs-
+  schritte können in einem Durchgang erfolgen. Die Prozesse stören sich nicht
+  gegenseitig. Kontrollkästchen 'Rotate exceeding moves' stellt sicher, dass
+  Bewegungen, die ein Ende überschreiten, zum anderen Ende rotiert werden.
+  Zum Beispiel, wenn Sie den kompletten Bewegungsbereich um +100 verschieben
+  und einen 'Maximum Move:' Wert von 550 haben (Start=0,Stop=550), werden alle
+  Bewegungen um diese Anzahl von Schritten verschoben, d.h. Bewegung 550 wird
+  zu 99 (weil umgebrochen) und Bewegung 0 wird zu 100. OK, das Kopieren auf
+  diese Weise mag etwas verwirrend sein, kann aber viel Zeit sparen.
+  Zusätzlich ist es möglich, die Servobewegungsrichtung während des Kopiervor-
+  gangs umzukehren, indem Sie das Kontrollkästchen "invert" verwenden.
 
-Track Sets:
-Ein Track enthält alle Bewegungsschritte, die der Abspieldauer einer MP3
-entsprechen. In der Standardeinstellung werden Bewegungen alle 50 ms (20 Hz)
-aufgezeichnet. Eine 20 Sekunden lange MP3 ergibt dann 400 Bewegungswegpunkte.
-'Start at move:' Ist die Startzeit eines Datensatzes in Schritten von
-$ConfigL::stepwidth. 'Stop at move:' ist die Stoppzeit in Schritten von 
-$ConfigL::stepwidth. Der Inhalt dieser Felder darf auch nur einen Bruchteil
-der MP3-Zeit betragen - das heisst - aufgezeichnet oder angezeigt werden. Die
-Checkbox 'Update "maximum Move field at the end of the mp3' steuert, dass nach
-dem Ende der MP3 die Anzahl der Bewegungen am Ende im Feld 'Maximale Bewegung:'
-vermerkt wird. Nach dem erneuten Laden einer neuen MP3 ohne .svo, also keine
-Datei vorhanden ist, wird das Kontrollkästchen automatisch aktiviert, so dass
-die Ermittlung der maximalen Anzahl der Bewegungspunkte bei der ersten
-Aufnahme erfolgt und das Kontrollkästchen anschließend automatisch deaktiviert
-wird. Dieser Vorgang kann jederzeit manuell durch Ankreuzen des Kästchens und
-anschließender Aufnahme bis zum Ende der MP3 wiederholt werden. Das
-Kontrollkästchen 
-'record or output all moves independent of Start and  Stop moves' ermöglicht
-die Ausgabe oder Aufzeichnung des gesamten Zeitbereichs vom Start bis zum Ende
-der MP3. Dies ist hilfreich, wenn Sie die Aufnahmezeit auf einen Bruchteil der
-gesamten MP3-Länge begrenzen möchten, die Ergebnisse aber im gesamten
-Zeitbereich sehen möchten. Anschließend können Sie die Aufnahme-/Anzeigezeit
-umschalten, indem Sie das Kontrollkästchen aktivieren. Die Felder 
-'Start at move' und 'Stop at move' werden auch in Verbindung mit dem Abschnitt
-'Copy Servos' verwendet. Hier schränken sie die zu kopierenden Felder ein.
+  Process:
+  Record startet eine Aufnahme entsprechend der Servoaktivierung. Nicht
+  aktivierte Servos werden nur abgespielt. Alle Servos deaktiviert ist das
+  gleiche wie 'View', außer dass keine Werte angezeigt werden, wenn "View all
+  servos" nicht aktiv ist.
+  View gibt nur MP3 und Bewegungen aus.
+  'View all servos' zeigt, wenn aktiv, alle Servobewegungswerte aller Servos an.
+  'View all servos' zeigt, wenn inaktiv, nur die Servowerte der im Servo-
+  Abschnitt aktivierten Servos an. Dies hilft oft, den Überblick zu behalten,
+  wenn viele Servos konfiguriert sind.
 
-Copy Servos:
-Hier können Sie bereits erfasste Bewegungen auf andere Servos kopieren. Der
-Kopiervorgang berücksichtigt die Werte in 'Start at move' und 'Stop at move'
-und kopiert nur den angegebenen Bereich. Dies ist hilfreich, wenn Sie nur die
-Bewegungen innerhalb eines bestimmten Zeitabschnitts einer kompletten Servospur
-kopieren möchten. Mit der Schaltfläche 'Copy' starten Sie das Kopieren der
-definierten Bereiche. Es ist möglich, mehrere Servos gleichzeitig zu kopieren,
-indem Sie mithilfe der Felder 'From svo:' und 'Till:' einen Servobereich
-definieren. Der Bereich umfasst die Anzahl der zu kopierenden Servos. Die
-Servos innerhalb der Spanne werden dann zum Ziel im Feld 'To:' kopiert. Das
-Feld 'To:' ist die erste Position, an die kopiert werden soll. Andere Servos im
-Bereich werden auf nachfolgende Servonummern kopiert, bis alle Servos innerhalb
-des Bereichs kopiert sind. Überlappende Servos und/oder Bewegungen stellen kein
-Problem dar, da der Inhalt vor dem Schreiben zwischengespeichert wird. Es ist
-auch möglich, Bewegungen innerhalb von Bewegungssätzen von Servos um eine
-beliebige Anzahl von Schritten in beide Richtungen zu verschieben, angegeben
-durch eine positive oder negative Zahl. Es ist möglich, die Bereiche für Servos
-und auch für Start- und Stoppbewegungen aufsteigend oder absteigend 
-einzustellen. Dementsprechend wird die Leserichtung des Bereichs vertauscht,
-was zu einem speichern der Bewegungen in die entgegengesetzte Richtung führt.
-Wenn Sie beispielsweise das Feld 'From svo:' auf 10 und das Feld 'To:' auf 4
-und 'To move:' auf 14 setzen, geht der Inhalt von Servo 10 an Servo 14,
-9 an 15, 8 an 16 usw bald. Gleiches gilt für 'Start at move:' und
-'Stop at move:'. Alle Kopier- und Verschiebeschritte können in einem Durchgang
-durchgeführt werden. Die Prozesse stören sich gegenseitig nicht. Die Checkbox
-'Rotate exceeding moves' sorgt dafür, dass Züge, die über ein Ende 
-hinausgehen, zum anderen Ende gedreht werden. Wenn Sie beispielsweise den
-gesamten Bewegungsbereich um +100 verschieben und einen Wert für
-'Maximum move:' von 550 haben (Start=0, Stopp=550), werden alle Bewegungen um
-diese Anzahl von Schritten verschoben, was bedeutet, Bewegung 550 wird zu
-Bewegung 99 (weil umgebrochen) und Bewegung 0 wird zu 100. Okay, das Kopieren
-auf diese Weise kann etwas verwirrend sein, aber es kann viel Zeit sparen.
-Zusätzlich kann imit Hilfe der Checkbox "invert" während des Kopierprozesses
-die Bewegungsrichtung der kopierten Servos invertiert werden. 
+  Process: Fill
+  Sie können Bewegungen innerhalb von Servobewegungen mit einem Wertevektor
+  füllen. Wenn Sie auf 'Fill' klicken, werden alle aktivierten Servos mit dem
+  Vektor gefüllt, der mit den Feldern 'Fill move:','Value:','To Move:','Value:'
+  definiert ist.
+  Zum Beispiel, wenn Sie hier 100 0 400 1000 eintragen, erhält Bewegung 100 in
+  den ausgewählten Servo(s) den Wert 0, Bewegung 400 erhält den Wert 1000 und
+  z.B. Bewegung 150 erhält 500 und jede Bewegung dazwischen erhält einen anderen
+  Wert entlang des Vektors von 0 bis 1000. Auch hier können Vektoren aufsteigend,
+  absteigend sein oder über den gesamten Bereich gleich bleiben, abhängig von
+  Ihren Einstellungen.
+  Da Fill auch zum Füllen der Relais-Datenwörter verwendet werden kann - (1 Wort
+  enthält 16 Bits, die 16 mögliche Relais-Ausgangspins widerspiegeln) - ergibt
+  sich ein kleines Problem, weil Servodaten nur 12 Bits (0-4096) verwenden,
+  Relais-Wörter aber bis zu 16 Bits (0-65535) benötigen. Wenn Sie Servodaten-
+  Positionswörter mit 16 Bits füllen würden, wäre das Ergebnis unvorhersehbar.
+  Daher werden Feldwerte normalerweise vor dem Speichern überprüft, sodass
+  Servowerte niemals 4096 überschreiten. In seltenen Fällen, wo Bitdaten für
+  einen Netzwerkknoten benötigt werden, der alle 16 Bits für Relais konfiguriert
+  hat, könnten Sie das Bitmuster für alle 16 Pins nicht setzen. Für diesen
+  seltenen Fall existiert der Button "Unlimit Range". Es ist jedoch eher
+  unwahrscheinlich, dass ein Node nur Relais-Pins konfiguriert hat. Normaler-
+  weise sind es nur Servos oder ein paar zusätzliche Relais-Pins. Nur wenn Sie
+  12 Relais auf einem Node überschreiten, können Sie diese Option verwenden.
+  Details siehe Abschnitt "nodeconfig.pl".
 
-Process:
-Record startet eine Aufnahme entsprechend der Servoaktivierung. Nicht
-aktivierte Servos werden nur ausgegeben. Wenn bei 'Record' alle Servos
-deaktiviert sind, ist das gleich wie bei 'View'. 'View' gibt MP3 und
-Bewegungen nur aus. 
-'View all servos' zeigt wenn aktiviert alle Servobewegungswerte aller Servos
-an. 
-'View all servos' zeigt wenn Inaktiv nur die Servowerte der aktivierten Servos
-im Servobereich an. Dies hilft oft den Überblick zu behalten, wenn viele
-Servos konfiguriert sind.
+  Block_operations:
+  Mit diesem neuen Dienstprogramm können Sie Blöcke bereits existierender Servo-
+  oder Relaisdaten in einer Datei speichern oder daraus laden. Im Dateiabschnitt
+  können Sie durch vorhandene Blockdateien im angezeigten oder eingegebenen
+  Pfad im Feld "Path:" wechseln oder springen. Durch Drücken von "Export"
+  schreiben Sie die im Abschnitt "Block Range" spezifizierten Daten. Durch
+  Drücken von "Import" importieren Sie einen zuvor gespeicherten Block.
+  Wenn Dateien existieren und Sie durch sie wechseln, wird der Datenbereich in
+  den Feldern angezeigt. Wenn Sie einen gespeicherten Block nur teilweise laden
+  möchten, können Sie die Felder unter "import as" ändern. Der Blockbeschreibungs-
+  abschnitt kann bearbeitet werden und wird zusammen mit der Datei gespeichert.
+  Beschreiben Sie den Block, wie Sie möchten, um ihn später leicht wiederzufinden.
+  Je mehr Blöcke Sie speichern, desto wichtiger wird die Beschreibung.
 
-Process: Fill
-Sie können Bewegungen innerhalb von Servobewegungen mit einem Wertevektor
-füllen. Wenn Sie auf 'fill' klicken, werden alle aktivierten Servos mit dem
-Vektor gefüllt, der in den Feldern
-'Fill move:', 'Value:', 'To Move:', 'Value:' definiert wurde. Wenn Sie hier
-beispielsweise 100 0 400 1000 eingeben, erhält Bewegung 100 in den
-ausgewählten Servos den Wert 0, Bewegung 400 erhält den Wert 1000 und
-beispielsweise Bewegung 150 erhält 500 und jede Bewegung dazwischen erhält
-einen anderen Wert entsprechend dem Vektor von 0 bis 1000. Auch hier können
-Vektoren aufsteigend, absteigend oder je nach Einstellung über den gesamten
-Bereich gleich bleiben.
-  
-Status:
-Hier werden nützliche Programmmeldungen angezeigt.
-  
-Das Programm wird mit Strg-Q beendet
+  Status:
+  Hier werden nützliche Programm-Nachrichten angezeigt.
 
-Tipps für die Bildschirmeinstellungen (Terminalfenster) von trackui.pl:
-Um die Bedienung des Servo-Anlernvorgangs anhand der Musik zu erleichtern,
-können Sie die Anzahl der angezeigten Servos in der Benutzeroberfläche in
-einer Zeile entsprechend der Bildschirmgröße Ihres Terminals anpassen. Auf
-einem großen Bildschirm passen mehr Servos in eine Reihe, auf einem kleineren
-Bildschirm müssen Sie möglicherweise die Anzahl der Servos in einer Reihe
-reduzieren, damit sie in den Bildschirm passen. Wenn nicht alle definierten
-Servos in eine Reihe passen, legt das Programm die verbleibenden Servos in
-einem neuen Tab oder Notebook ab. Abhängig von der Gesamtzahl der definierten
-Servos kann die Anzahl der Notebooks bis zu 8 betragen. Um zwischen den
-Notebooks (Servoseiten) zu wechseln, drücken Sie die Taste PgUp oder PgDn auf
-Ihrer Tastatur. Um die Anzahl der Servos pro Seite festzulegen, müssen Sie den
-Parameter '$num_servos_per_row' in Modules/ConfigL.pm ändern. Wenn Sie die
-Meldung "The sceen is currently too small .." erhalten, versuchen Sie, diesen
-Wert zu reduzieren, einen größeren Bildschirm zu verwenden oder Verwenden Sie
-eine kleinere Terminalschriftart.
- 
-Wichtiger Hinweis:
-Wenn Sie einmal eine Servodatei (.svo) erstellt haben, kann die Anzahl der
-Servos nicht mehr über die Konfigurationsdatei Modules/ConfigL.pm erhöht
-werden. Um die Anzahl der Servos zu erhöhen, müssen Sie die .svo-Datei manuell
-löschen. Daher ist es eine gute Idee, die Anzahl der benötigten Servos zu
-ermitteln, bevor Sie mit der Aufnahme beginnen.
+  Das Programm wird mit Strg-Q beendet.
+
+  Tipps für die Bildschirmeinstellungen von trackui.pl:
+  Um die Bedienung des Servo-Teachprozesses entsprechend der Musik zu erleichtern,
+  können Sie die Anzahl der angezeigten Servos in einer Zeile in der Oberfläche
+  an Ihre Terminalbildschirmgröße anpassen. Auf einem großen Bildschirm können
+  Sie mehr Servos in einer Zeile haben, auf einem kleineren Bildschirm müssen
+  Sie die Anzahl der Servos pro Zeile reduzieren, um auf den Bildschirm zu passen.
+  Wenn nicht alle definierten Servos in eine Zeile passen, legt die Oberfläche
+  die verbleibenden Servos in einen neuen Reiter oder Notebook ab. Abhängig von
+  der Gesamtzahl der definierten Servos kann die Anzahl der Notebooks groß sein.
+  Um durch die Notebooks (Servo-Seiten) zu blättern, drücken Sie die Taste
+  BildAuf oder BildAb auf Ihrer Tastatur. Um die Anzahl der Servos pro Seite
+  einzustellen, müssen Sie den Parameter "$num_servos_per_row" in Modules/ConfigL.pm
+  ändern. Wenn Sie die Meldung "The screen is currently too small .." erhalten,
+  versuchen Sie, diesen Wert zu reduzieren, einen größeren Bildschirm zu
+  verwenden oder eine kleinere Terminal-Schriftart zu verwenden.
+
+  Wichtiger Hinweis:
+  Wenn Sie einmal eine Servo (.svo)-Datei erstellt haben, kann die Anzahl der
+  Servos nicht mehr über die Konfigurationsdatei Modules/ConfigL.pm erhöht
+  werden. Um die Anzahl der Servos zu erhöhen, müssen Sie die .svo-Datei
+  manuell löschen. Daher ist es eine gute Idee, die Anzahl der benötigten Servos
+  zu überlegen, bevor Sie mit der Aufnahme beginnen.
 
 live.pl
-Dieses Programm gibt während der Präsentation den Ton zusammen mit den
-aufgezeichneten Bewegungen aus. Die Sortierung der Dateien folgt der
-ASCII-Reihenfolge.
-  
-Die Steuerung des Programms erfolgt ausschließlich über die vier Tasten des
-Bedienfeldes. Der Joystick wird nicht benötigt und ist normalerweise nicht
-angeschlossen.
+  Dieses Programm gibt während der Präsentation den Ton zusammen mit den
+  aufgezeichneten Bewegungen aus. Die Sortierung der Dateien folgt der
+  ASCII-Reihenfolge.
 
-Taste 1:
-Beginn der ersten Sequenz oder Wechsel zur nächsten Sequenz.
+  Das Programm wird nur mit den vier Tasten des Steuerungs-Buttonpanels
+  kontrolliert. Der Joystick wird nicht benötigt und normalerweise getrennt.
 
-Taste 2:
-Beginn der vorherigen Sequenz
+  Taste 1:
+  Start der ersten Sequenz oder Wechsel zur nächsten Sequenz.
 
-Taste 3:
-Wiederholungen der vorherigen Sequenz mit Ausgabe der
-Wiederholungspräfixsequenz aus dem Ordner 'repeat' des Ausgabeverzeichnisses.
-Wenn dort mehr als eine Sequenz vorhanden ist, wird die folgende Sequenz
-(mp3-Datei) als Präfix verwendet. Die Idee besteht darin, die Möglichkeit zu
-haben, eine Sequenz zu wiederholen, wenn es beispielsweise für das Publikum
-zu laut war, um sie zu verstehen.
+  Taste 2:
+  Start der vorherigen Sequenz.
 
-Taste 4:
-Gibt die nächste Sequenz im Ordner 'extra' des Ausgabeverzeichnisses aus. Sind
-dort mehrere Sequenzen hinterlegt, wird bei jeder Wiederholung die folgende
-Sequenz ausgegeben. Folder Extra kann zum Beispiel nur ein Lacher enthalten 
-oder eine Reaktionssequenz für das Publikum sein.
+  Taste 3:
+  Wiederholt die vorherige Sequenz mit Ausgabe der Wiederholungs-Präfixsequenz
+  aus dem Ordner "repeat" des Ausgabeverzeichnisses. Wenn mehr als eine Sequenz
+  dort vorhanden ist, wird die folgende Sequenz (MP3-Datei) als Präfix verwendet.
+  Die Idee ist, eine Möglichkeit zu haben, eine Sequenz zu wiederholen, wenn sie
+  zum Beispiel zu laut im Publikum war, um verstanden zu werden.
 
-servokalib.pl: (2-Kanal) und servocalib-single.pl: (1-Kanal)
-Dieses Programm dient zum ersten Test neuer Servos und zur Ermittlung der
-Servo- und Joystick-Parameter. Es ist mehr oder weniger selbsterklärend. Hier
-muss der Joystick oder ein Gamepad angeschlossen sein.
+  Taste 4:
+  Gibt die nächste Sequenz im Ordner "extra" des Ausgabeverzeichnisses aus.
+  Wenn mehrere Sequenzen dort gespeichert sind, wird bei jeder Wiederholung die
+  folgende Sequenz ausgegeben. Der Ordner "extra" kann nur ein Lachen oder eine
+  Reaktionssequenz auf das Publikum sein.
 
-Bedienelemente am Joystick:
-Taste rechts: schaltet den Joystick auf das nächste Servo um.
-Taste links: schaltet den Joystick auf das vorherige Servo um.
- 
+nodeconfig.pl
+  Diese Anwendung wird benötigt, um Netzwerkgeräte - auch Nodes genannt -
+  einzurichten. Nodes haben eine Netzwerkschnittstelle, sie können Daten per
+  WLAN oder Ethernet empfangen. Nodes lauschen auf Broadcasts am UDP-Port
+  7625. UDP-Datenpakete werden vom Master gesendet - in unserem Fall normaler-
+  weise ein Raspberry Pi oder Ähnliches. Diese Pakete können entweder Servo-
+  und Relaisdaten oder Konfigurationsbefehle enthalten. Tatsächlich unterscheiden
+  sich Datenwörter für Servos oder für Relais nicht. Das bedeutet, Relaisdaten
+  können leicht durch Servobewegungen ausgegeben werden und Relaiswörter als
+  Servobewegungen. Nur die Nodekonfiguration definiert, was als Servo- oder
+  Relaisdaten verwendet wird. nodeconfig.pl sendet Konfigurationsbefehle an
+  Nodes, um ihnen zu ermöglichen, später auf Betriebsdatenpakete in der
+  konfigurierten Weise zu reagieren. Um Datenbefehle als Servo- oder Relais-
+  aktionen zu empfangen und auszugeben, muss jeder Node konfiguriert werden,
+  da Betriebs-Broadcast-Datagramme Daten für mehrere Nodes enthalten können.
+  nodeconfig.pl richtet ein, welche Daten im Datagramm für den zu konfigurieren-
+  den Node bestimmt sind und wie diese Daten innerhalb des Nodes verwendet
+  werden. Um einen bestimmten Node konfigurieren zu können, benötigt er
+  zunächst eine Nodeadresse. Ein neuer, leerer Node hat zunächst keine
+  Nodeadresse. Die Nodeadresse wird über das Netzwerk mit einem Basis-
+  konfigurationsbefehl konfiguriert. Durch Setzen des Jumper "Bas Conf" auf der
+  Hardware des Nodes wird der Node für den Basisbefehl empfänglich gemacht.
+  Der Basisbefehl setzt die Nodeadresse und auch die MAC-Adresse des Nodes.
+  Dies impliziert, dass nur ein Node mit gesetztem "Bas Conf"-Jumper im
+  Netzwerk gleichzeitig aktiv sein darf. Wenn mehr als ein Node im Netzwerk
+  dieselbe MAC-Adresse hat, bekommen Sie wahrscheinlich Probleme in diesem
+  Netzwerk, daher ist es wichtig, jedem Node eine andere Node- und MAC-
+  Adresse zu geben.
+  nodeconfig.pl unterstützt Sie dabei, aber es kann Sie nicht immer davor
+  bewahren, etwas falsch zu machen, also denken Sie daran.
 
-X-Pos(0-4096) |Y-Pos(0-4096) |Joystick X |Joystick Y |Servo 0 |Servo 1
----------------------------------------------------------- -------------
-    2714      |    1602      |   460     |   317     |  438   |   307
+Buttons, Felder und Steuerungen in nodeconfig.pl:
+  "Node Address:" ist die eindeutige Nummer der Netzwerk- oder WLAN-Box (Node),
+    an die Sie Servos oder Relais anschließen können. Die Nodeadresse kann nur
+    übertragen werden, wenn der "Base Conf"-Jumper am Node gesetzt ist.
+    Stellen Sie sicher, dass Sie nicht zwei Nodes dieselbe Nodenummer geben!
+  "MAC Address:" ist die Netzwerkadresse des Nodes, die innerhalb Ihres
+    Ethernet-Netzwerksegments eindeutig sein muss. Die letzten zwei Bytes der
+    MAC-Adresse sind die Nodenummer im Hexadezimalformat. Um die Basis zu
+    ändern, drücken Sie den Button "New_MAC_Base". Die MAC kann nur übertragen
+    werden, wenn der "Base Conf"-Jumper am Node gesetzt ist.
+    !!!!!! Stellen Sie sicher, dass Sie nur einen Node-Jumper gleichzeitig
+    setzen! Andernfalls bringen Sie Ihr Netzwerk durcheinander !!!!!!
+  "Number of Servos:" definiert, wie viele Servos an diesen Node angeschlossen
+    sind. Der Bereich ist 0 bis 16. Wenn ein Node seine Ausgangspins mit
+    Relais-Ausgängen teilt, dürfen sich die Pins nicht überlappen. Servo-Ausgänge
+    und Relais-Ausgänge können bei höheren Nummern beginnen. So können sowohl
+    Relais als auch Servos an denselben Node angeschlossen werden.
+  "SVO # is SVO at pin" Servonummern, die in ConfigL.pm definiert sind, werden
+    auf die Pins Ihres Nodes abgebildet. Wobei die hier eingegebene ConfigL.pm-
+    Servonummer auf den Servo abgebildet wird, der an Pin "1st SVO starts at pin"
+    angeschlossen ist, und automatisch alle folgenden Servonummern auf die
+    nächsten Pins abgebildet werden, bis die im vorherigen Feld definierte
+    "Number of servos" erreicht ist.
+  "1st SVO starts at pin" Die Servonummer, die in "SVO # is SVO at pin" gesetzt
+    ist, wird auf diesen Pin Ihrer Box abgebildet. Der Bereich ist: 0 bis 15.
+    Zum Beispiel: Wenn Sie 'Number of Servos' auf 5 setzen und "SVO #..." auf
+    10 und "1st SVO..." auf 4, dann wird Servo10, konfiguriert in ConfigL, auf
+    Pin 4 Ihrer Box abgebildet, Servo11 auf Pin5 .. und Servo14 auf Pin 8.
+  "Number of Relais" definiert, wie viele Relais an diesen Node angeschlossen
+    sind. Der Bereich ist 0 bis 16. Wenn ein Node seine Ausgangspins mit
+    Servo-Ausgängen teilt, dürfen sich die Pins nicht überlappen. Servo-Ausgänge
+    und Relais-Ausgänge können bei höheren Nummern beginnen. So können sowohl
+    Relais als auch Servos an denselben Node angeschlossen werden.
+  "SVO # keeps Relais data" Relais werden aus Servodaten gesteuert, wobei eine
+    Servoposition 16 Bit = maximal 16 Relais enthält. Diese in ConfigL.pm
+    definierte Servonummer wird auf die Pins Ihres Nodes abgebildet. Wenn ein
+    Node nur Relais-Ausgänge hat und die "Number of Relais" 16 ist, wird jedes
+    Bit des Servodatenworts auf seinen referenzierten Pin des Nodes ausgegeben.
+  "1st Relay starts at pin:" Dieser Wert ist wichtig, wenn ein Node Servo- und
+    Relais-Pins teilt. Er definiert, wo die Relais-Bitdaten auf die Ausgangspins
+    abgebildet werden. Zum Beispiel: Wenn Sie 12 Servos und 4 Relais für Ihren
+    Node haben, dann wird 'Number of Servos' zu 12, "Number of Relais" zu 4
+    und '1st Relay starts at Pin:' zu 13.
+  "BasicSetup" Sendet die Nodeadresse und MAC an alle Nodes mit gesetztem
+    "Bas Conf"-Jumper. !Warnung!: Nur ein 'Bas Conf'-Jumper darf gleichzeitig
+    gesetzt sein.
+  "Identify Node" Drücken dieser Taste sendet einen Blinkbefehl an den Node.
+    Dies dient dazu, einen Node in Umgebungen identifizieren zu können, in
+    denen mehrere Nodes installiert sind.
+  "Reboot_Node" Zwingt den Node zum Neustart.
+  "Reboot_Network" Zwingt alle Nodes im gesamten Netzwerk zum Neustart.
+  "Unconfigure_Node" Entfernt alle Konfigurationswerte des Nodes. Beachten
+    Sie, dass Sie alle Nodeparameter neu konfigurieren müssen, einschließlich
+    der Notwendigkeit, den Bas Conf-Jumper nach diesem Befehl zu setzen.
+    Mit Vorsicht verwenden!!!!
+  "Get_Node_Status" Fordert den Konfigurationsstatus vom Node an und zeigt
+    ihn an, wenn empfangen.
+  "Send_Node_Setup" Sendet alle knotspezifischen Konfigurationsdaten auf einmal,
+    natürlich mit Ausnahme von Nodeadresse und MAC.
+  "Output_DB" Dieser Button gibt eine Datenbankliste auf Datei oder Bildschirm
+    aus, unter Verwendung der bereitgestellten Checkbox-Optionen.
 
-In der Datei Modules/ConfigL müssen Sie die Grenzwerte eingeben - siehe
-Hinweise in der Datei selbst.
+nodeconfig.pl und seine Datenbank:
+  Alle Nodekonfigurationsversuche, d.h. Drücken der Buttons 'Send_Node_Setup'
+  und 'Base_config', werden in der Datenbank nodeconfig.db gespeichert, die
+  sich im Konfigurationsverzeichnis einer Szene befindet. Am Ende eines
+  'Send_Node_Setup'-Befehls wird der Node aufgefordert, mit seiner Konfigura-
+  tion zu antworten. Wenn die empfangene Konfiguration mit der gesendeten in der
+  Datenbank übereinstimmt, wird der Node als bestätigt markiert. Das zeigt,
+  dass der Node wirklich so eingerichtet ist, wie in der Datenbank angezeigt.
+  Wenn ein Node nicht als bestätigt markiert ist, können Sie versuchen, die
+  Konfiguration erneut zu senden.
+  Sobald ein Node in der Datenbank ist, werden seine Einstellungen in den
+  Feldern angezeigt. Das bedeutet, das erneute Senden einer Konfiguration ist
+  nur einen Klick entfernt. In einer realen Installation wird empfohlen, die
+  Nodenummer auf dem Gehäuse des Nodes zu notieren, um in großen Installationen
+  leicht den Überblick zu behalten.
+------------------------------------------------------------------------------
+Neue Parameter mit Bechele 3.0
+  Mit der Bechele Software 3.0 wurden neue Parameter in ConfigL.pm eingeführt:
+  "mp3loop": Relevant für live.pl
+    Es kann wichtig sein für unbeaufsichtigte Installationen, bei denen Gäste
+    die Wiedergabe der Szene durch eine Lichtschranke oder Ähnliches auslösen.
+    Nach dem Abspielen aller MP3-Dateien beginnt die Szene wieder von vorne.
+  "play_full_mp3": Wenn auf 1 gesetzt, ändert sich das Standardverhalten, nicht
+    sofort zur nächsten MP3-Datei zu springen. So wird eine MP3-Datei mit ihren
+    Bewegungen immer vollständig abgespielt. Bei einem neuen Auslöser wird dann
+    die nächste Datei abgespielt.
+  "netport": Dies ist der Port, den die Netzwerkgeräte zum Empfangen von 
+    Broadcast-Bewegungsdaten verwenden. Belassen Sie diesen Wert immer auf dem
+    Standardwert. Wenn Sie ihn ändern, müssen Sie den Port auch in der
+    ESP-Node-Firmware ändern. Das bedeutet, dass die Firmware neu kompiliert
+    werden muss.
+  "sendtonet": Muss auf 1 gesetzt werden, wenn Netzwerkgeräte unterstützt 
+    werden sollen.
+  "sendtopca": Muss auf 1 gesetzt werden, wenn direkt angeschlossene
+    PCA9685-Boards unterstützt werden sollen.
+  "block_popup_width": Definiert die Breite des Fensters für die
+    Blockoperationseinstellungen.
+  "matrix_popup_width": Definiert die Breite des Fensters für die Aktormatrix.
+  "max_out_pins": Anzahl der von ESP-Netzwerkgeräten unterstützten Pins.
+  "dboutlist": Definiert den Namen und Pfad der Ausgabedatei für die
+    Datenbank-Zusammenfassungsdateien von nodeconfig.pl.
 
-backup:
-   Shell-Skript, das die aktuelle Konfiguration als Tar-Ball speichert in:
-   /usr/local/backup
+servocalib.pl (2-Kanal) und servocalib-single.pl (1-Kanal)
+  Dieses Programm wird für einen ersten Test neuer Servos und zur Bestimmung
+  der Servo- und Joystick-Parameter verwendet. Es ist mehr oder weniger selbst-
+  erklärend. Hier müssen Sie den Joystick oder ein Gamepad angeschlossen haben.
 
-activate_autostart:
-Wenn Sie dies einmal unter Linux-Systemen mit Systemd-Diensten ausführen, wird
-das Programm live.pl nach dem Booten automatisch gestartet. Dies ist
-hilfreich, wenn kein Terminal mit dem Raspi verbunden ist. Läuft nur auf
-Distributionen, die systemctl unterstützen.
+  Bedienelemente am Joystick:
+  Taste rechts: schaltet den Joystick zum nächsten Servo.
+  Taste links: schaltet den Joystick zum vorherigen Servo.
 
-deactivate_autostart:
-Deaktiviert den automatischen Start von live.pl
-  
-cksum:
-Hilfsprogramm, das die Dateiintegrität von .svo-Dateien überprüft.
+X-Pos(0-4096)   |Y-Pos(0-4096)  |Joystick X |Joystick Y |Servo 0    |Servo 1
+-----------------------------------------------------------------------------
+2714            | 1602          | 460       | 317       | 438       | 307
 
-gamepad.pl:
-Hilfsprogramm zum Ermitteln der Tasten- und Achsennummern eines neuen Gamepads.
+  In der Datei Modules/ConfigL müssen Sie die Grenzwerte eintragen - siehe die
+  Hinweise in der Datei selbst.
+
+backup
+  Shell-Skript, das die aktuelle Konfiguration als Tarball speichert in:
+  /usr/local/backup
+
+activate_autostart
+  Einmalig ausgeführt unter Linux-Systemen, die systemd-Dienste verwenden, wird
+  das Programm live.pl automatisch nach dem Booten gestartet. Dies ist hilfreich,
+  wenn kein Terminal mit dem Raspi verbunden ist.
+  Läuft nur auf Distributionen, die systemctl unterstützen.
+
+deactivate_autostart
+  Deaktiviert den automatischen Start in live.pl.
+
+cksum
+  Hilfsdatei, die die Dateiintegrität von .svo-Dateien überprüft.
+
+gamepad.pl
+  Hilfsprogramm, um die Button- und Achsennummern eines neuen Gamepads
+  herauszufinden.
 
 Aufnahmetipps:
-Erstellen Sie Ihre Audiodateien mit einer längeren Stille am Ende. Die Puppe
-kann sich also weiterbewegen, während der Puppenspieler reagiert. Wenn die
-Taste für die nächste Sequenz gedrückt wird, wird die Ausgabe sofort gestoppt
-und die darauffolgende Sequenz gestartet. Nehmen Sie die Bewegungen des
-Modells besser etwas länger auf, damit die Puppe in Sprechpausen nicht
-statisch wirkt.
-
--------------------------------------------------- --------------
+  Erstellen Sie Ihre Audiodateien mit einer längeren Stille am Ende. So kann
+  sich die Puppe weiterbewegen, während der Puppenspieler antwortet. Wenn die
+  Taste für die nächste Sequenz gedrückt wird, wird die aktuelle sofort
+  gestoppt und die folgende beginnt. Nehmen Sie die Modellbewegungen besser
+  etwas länger auf, damit die Puppe in Sprechpausen nicht "statisch" aussieht.
+------------------------------------------------------------------------------
 Konfiguration:
-Nach der Installation müssen möglicherweise Parameter geändert werden, bevor
-Sie beginnen können mit den Abspielen oder Aufnehmen.
+Nach der Installation müssen Parameter möglicherweise geändert werden, bevor Sie
+mit dem Spielen oder Aufnehmen beginnen können.
 
-Programmparameter einrichten:
-$use_gamepad=1;  #Bei 1 wird das Gamepad als Eingabegerät verwendet, bei 0 der
-selbstgebaute Joystick
-$joystick_device=0;      #Das Linux-Joystick-Hardwaregerät 1 oder 0
-Serialport ($serialport) # Je nach verwendeter Hardware.
-i2c-Port ($i2cport)      #Je nach verwendeter Hardware.
-i2c Adresse ($i2c_address) #Entsprechend der verwendeten Adresse. 
-(Tipp: mit i2cdetect erkennen)
-$stepwidth=50000000;     #Die Aktualisierungsrate in ns (Nanosekunden), mit
-der Bewegungen erfasst und ausgegeben werden. Der Standardwert ist 50 ms oder
-20 Hz
+Einrichten der Programmparameter:
+$use_gamepad=1;            - wenn 1 wird das Gamepad als Eingabegerät verwendet,
+                             wenn 0 der selbstgebaute Joystick.
+$joystick_device=0;        - Das Linux-Joystick-Hardwaregerät - 1 oder 0.
+Serialport ($serialport)   - Entsprechend der verwendeten Hardware.
+i2c port ($i2cport)        - Entsprechend der verwendeten Hardware.
+i2c Adress ($i2c_address)  - Entsprechend der verwendeten Adresse. (Tipp:
+                             erkennen mit i2cdetect).
+$stepwidth=50000000        - die Aktualisierungsrate in ns (Nanosekunden), mit
+                             der Bewegungen erfasst und ausgegeben werden.
+                             Standard ist 50 ms oder 20Hz.
+$sendtopca                 - aktiviert das Senden von Daten an die PCA9685-
+                             Geräte, die direkt an den GPIO-Port des Raspi
+                             angeschlossen sind.
+$sendtonet                 - aktiviert das Senden von Daten per Broadcast ins
+                             Netzwerk. Der die Daten empfangende Node muss
+                             eingerichtet sein, auf welche Daten er reagiert,
+                             da alle Servo- und Relaisdaten in einem Paket ins
+                             Netzwerk gesendet werden.
+$max_out_pins              - immer 16 für die aktuellen ESP32-Node.
 
-
-Anzahl der verwendeten Servos einstellen:
-Datei bearbeiten: /usr/local/bin/Modules/ConfigL.pm
+Einrichten der Anzahl der verwendeten Servos:
+Bearbeiten Sie die Datei: /usr/local/bin/Modules/ConfigL.pm
 Ändern Sie den Eintrag:
-$num_servos=57; # Anzahl der verwendeten Servos - nicht begrenzt
-Natürlich müssen diese Servos angeschlossen sein.
+$num_servos=57;                      # Anzahl der verwendeten Servos - unbegrenzt
+Natürlich müssen diese Servos konfiguriert sein und die Datenstruktur von
+$servosettings muss so viele Einträge enthalten. Mit der Standard-ConfigL.pm-
+Datei sind 64 Servos in der Datenstruktur $servosettings vorbereitet. Wenn Sie
+also mehr als 64 Servos verwenden möchten, müssen Sie diese Datenstruktur
+erweitern. Duplizieren Sie einfach einige der Zeilen in der Mitte, um mehr
+Servos zu erhalten.
 
-Einstellen der Aktualisierungsrate der Servos:
-(wie oft ein neuer Bewegungsparameter an das Servo gesendet wird). 
-Die Zykluszeit wird in ns (Nanosekunden) angegeben. Der Standardwert ist
-50000000, dies entspricht einer Frequenz von 20 Hz. Um die Standardeinstellung
-zu ändern, ändern Sie den Parameter: 
-$stepwidth=50000000; in der Datei ConfigL.pm Bitte beachten Sie, dass die
-Schrittweite beim Laden einer Servo-Datei (.svo) überschrieben wird. Mit
-anderen Worten: Solange Sie eine SVO-Datei haben, hat der Parameter in 
-ConfigL.pm keine Auswirkung. Um die Aktualisierungsrate zu ändern, müssen Sie
-die .svo-Datei löschen und trackui.pl neu starten oder eine SVO-Datei mit
-einer anderen Aktualisierungsrate laden.
+Einstellen der Aktualisierungsrate der Servos (wie oft ein neuer Bewegungs-
+parameter an den Servo gesendet wird). Die Zykluszeit ist in ns (Nanosekunden),
+der Standard ist 50000000, das ist eine Frequenz von 20 Hz.
+Um den Standard zu ändern, ändern Sie Parameter $stepwidth=50000000; in der
+Datei ConfigL.pm.
+Bitte beachten Sie, dass die Schrittweite beim Laden einer Servo (.svo)-Datei
+überschrieben wird. Mit anderen Worten, solange Sie eine svo-Datei haben, hat
+der Parameter in ConfigL.pm keine Wirkung. Um die Aktualisierungsrate zu ändern,
+müssen Sie die .svo-Datei löschen und trackui.pl neu starten oder eine svo-Datei
+mit einer anderen Aktualisierungsrate laden.
 
-Einrichten des Joysticks:
-Angenommen, ein Joystick liefert in der Minimalposition einen Wert von 123 und
-in der Maximalposition 855. Durch Eingabe dieser Werte in ConfigL.pm werden
-diese Werte intern in 0 bis 4096 umgewandelt. Wenn Sie den Stick auf Minimum
-bewegen, wird ein innerer Wert von 0 verwendet und wenn der Stick auf Maximum
-geht, wird ein innerer Wert von 4096 verwendet. 
-Anpassen ConfigL-Werte:
-$joystick_x_start $joystick_y_start $joystick_x_end $joystick_y_end (Joystick)
-$gamepad_x_start $gamepad_y_start $joystick_x_end $joystick_y_end (Gamepad)
+Einrichten des Joysticks.
+Angenommen, ein Joystick liefert bei Minimalposition einen Wert von 123 und bei
+Maximum 855. Durch Eingabe dieser Werte in ConfigL.pm werden diese Werte intern
+in 0 bis 4096 umgewandelt. Wenn Sie den Stick auf Minimum bewegen, wird ein
+interner Wert von 0 verwendet, und wenn der Stick auf Maximum geht, ein interner
+Wert von 4096.
+Passen Sie in ConfigL die Werte an:
+  $joystick_x_start $joystick_y_start $joystick_x_end $joystick_y_end (Joystick)
+  $gamepad_x_start $gamepad_y_start $joystick_x_end $joystick_y_end (Gamepad)
 
-Für ein Gamepad definieren die folgenden Parameter die Tasten- und
-Achsenzuordnungen für die spätere Verwendung der Steuerelemente:
+Für ein Gamepad definieren die folgenden Parameter die Button- und Achsen-
+zuordnungen für die spätere Verwendung der Steuerungen:
 
-$gamepad_start=0;                               # define which gamepad button starts
-$gamepad_stop=1;                                # define gamepad button that stops
-$gamepad_axis_y=1;                              # define the gamepad axis y
-$gamepad_axis_x=2;                              # define the gamepad axis x
+$gamepad_start=0;                   # definiert, welcher Gamepad-Button startet.
+$gamepad_stop=1;                    # definiert Gamepad-Button, der stoppt.
+$gamepad_axis_y=1;                  # definiert die Gamepad-Achse y.
+$gamepad_axis_x=2;                  # definiert die Gamepad-Achse x.
 
-Die entsprechenden Zahlenwerte werden in gamepad.pl angezeigt. Dies hilft also
-herauszufinden, welcher Knopf welche Nummer hat.
+Die referenzierenden numerischen Werte werden innerhalb von gamepad.pl 
+angezeigt.  Das hilft also herauszufinden, welcher Button welche Nummer hat.
 
 Einrichten eines Servos:
-Bei Servos haben wir folgende Parametersätze:
-1. Der gesamte mögliche Bewegungsbereich eines Servos 
-   (nicht im Modell montiert). Dies dient der Parametrierung des Servotyps, so
-   dass beim Ausführen von servocalib.pl das Servo bereits voreingestellt ist
-   und entsprechend reagiert.
-   (servolimit start + servolinit end)
-2. Der mögliche Bewegungsbereich innerhalb des Modells.
-   Dadurch wird die Servobewegung innerhalb des Modells auf ihre mechanischen
-   Grenzen begrenzt, sodass das Servo nicht versucht, die Mechanik zu
-   überfahren.
-   (servostart + servoend)
+Bei Servos haben wir die folgenden Parametersätze:
+1. Den gesamten möglichen Bewegungsbereich eines Servos (nicht im Modell
+   montiert). Dies dient dazu, den Servotyp zu parametrieren, sodass bei 
+   Ausführung von servocalib.pl der Servo bereits voreingestellt ist und
+   entsprechend reagiert.  (servolimit start + servolimit end)
+2. Den möglichen Bewegungsbereich innerhalb des Modells.
+   Dies dient dazu, die Servobewegung innerhalb des Modells in seinen 
+   mechanischen Grenzen zu begrenzen, sodass der Servo nicht versucht, die
+   Mechanik zu
+   überfahren. (servostart + servoend)
 3. Die Bewegungsrichtung. (1 oder 0).
-   O gibt die Bewegung wie der Joystick aus.
-   1 kehrt die Bewegung entgegengesetzt zum Joystick um
-4. Servolabel: Hier können Sie einen Text eingeben, der später das Servo in
+   0 gibt die Bewegung wie der Joystick aus.
+   1 kehrt die Bewegung entgegengesetzt zum Joystick um.
+4. Servolabel: Hier können Sie einen Text eingeben, der später den Servo in
    trackui.pl benennt.
 
-Tipps zum Einrichten:
-- Vermeiden Sie auf jeden Fall, dass das Servo seine mechanischen Grenzen
-  überschreitet. Vor allem Billigservos wie das SG90 mögen das nicht und
-  brennen durch.
-- Richten Sie zuerst den Joystick mit servocalib ein 
-  (ohne Servos anzuschließen) und richten Sie dann ConfigL.pm ein. Überprüfen
-  Sie in einem zweiten Durchgang, ob Sie 0-4096 erreichen.
-- Erst dann !ein! Servo anschließen, das nicht in Ihrem Modell montiert ist,
-  stellen Sie den Knüppel in die Mitte, bestimmen Sie die Grenzen und tragen
-  Sie diese in ConfigL.pm an den Positionen für servolimit_start und
+Tipps zur Einrichtung:
+- Verhindern Sie auf jeden Fall, dass der Servo versucht, seine mechanischen
+  Grenzen zu überschreiten. Besonders billige Servos wie SG90 mögen das nicht
+  und können durchbrennen.
+- Richten Sie zuerst den Joystick mit servocalib ein (ohne Servos anzuschließen)
+  und setzen Sie dann ConfigL.pm. Überprüfen Sie in einem zweiten Durchlauf, ob
+  Sie 0-4096 erreichen.
+- Schließen Sie dann erst !einen! Servo an, der nicht in Ihrem Modell montiert
+  ist, stellen Sie den Stick auf die Mitte, bestimmen Sie die Grenzwerte und
+  tragen Sie sie in ConfigL.pm an den Positionen für servolimit_start und
   servolimit_end ein.
-- Führen Sie nun servocalib.pl erneut aus und prüfen Sie, ob das Servo gerade
-  seine Grenzen erreicht, wenn Sie Ihren Joystick vollständig auf Maximum und
-  Minimum bewegen. Ein Servowert von 0 muss das Servo an seine erste Grenze
-  bewegen und ein Servowert von 4096 muss das Servo an seine entgegengesetzte
-  Grenze bewegen. Wenn dies einwandfrei und ohne Lücken oder Überschreitungen
-  funktioniert, sind die Servogrenzen korrekt. Normalerweise haben Servos des
-  gleichen Typs ungefähr die gleichen Grenzen, sodass eine Übernahme der Werte
-  von einer Servodefinition auf die anderen Servos normalerweise möglich ist.
-- Platzieren Sie nun das Servo in Ihrem Modell und führen Sie servocalib erneut
-  aus. Bestimmen Sie die mechanischen Grenzen Ihres Modells für dieses
-  spezielle Servo. Sobald Sie die beiden Grenzwerte haben, geben Sie diese in
-  ConfigL in den Feldern für Servostart und Servoend ein.
-- Wenn Sie dieses Verfahren befolgen, können Sie einen Servo auf einen anderen
-  Typ umstellen, ohne vorhandene Bewegungsdateien erneut erfassen zu müssen.
-  An dieser Stelle lohnt es sich also, genau zu sein. Durch die spätere
-  Neuanpassung lediglich der vier Grenzwerte können Sie Servos und
-  Bewegungsabläufe austauschen und trotzdem bestehende Bewegungsdateien
-  beibehalten. Mit anderen Worten: Bewegungen werden normalisiert.
+- Führen Sie nun servocalib.pl erneut aus und prüfen Sie, ob der Servo gerade
+  bis zu seinen Grenzen fährt, wenn Sie Ihren Joystick voll auf Maximum und
+  Minimum bewegen. Ein Servowert von 0 muss den Servo zu seiner ersten Grenze
+  bewegen und ein Servowert von 4096 muss den Servo zu seiner gegenüberliegenden
+  Grenze bewegen. Wenn dies ohne Lücken oder Überläufe gut funktioniert, sind
+  die Servo-Grenzen korrekt. Normalerweise haben Servos desselben Typs etwa
+  dieselben Grenzwerte, sodass die Übernahme der Werte von einer Servodefinition
+  auf die anderen Servos normalerweise möglich ist.
+- Setzen Sie nun den Servo in Ihr Modell ein und führen Sie servocalib erneut
+  aus. Bestimmen Sie die mechanischen Grenzen Ihres Modells für diesen 
+  bestimmten Servo. Sobald Sie die beiden Grenzen haben, tragen Sie sie in
+  ConfigL in die Felder für Servostart und Servoend ein.
+- Wenn Sie diesem Verfahren folgen, können Sie einen Servo durch einen anderen
+  Typ ersetzen, ohne vorhandene Bewegungsdateien neu erfassen zu müssen. Es
+  lohnt sich also, an dieser Stelle genau zu sein. Durch späteres erneutes
+  Anpassen der vier Grenzwerte können Sie Servos und Bewegungssequenzen
+  austauschen und vorhandene Bewegungsdateien behalten. Mit anderen Worten,
+  Bewegungen werden normalisiert.
+[Dateiinhalt endet]

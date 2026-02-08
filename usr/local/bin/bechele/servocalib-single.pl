@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #   Test program for first test of servo movement
-#   Copyright (C) <2024>  <Rolf Jethon>
-#   Version 2.0
+#   Copyright (C) <2026>  <Rolf Jethon>
+#   Version 3.0
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -17,22 +17,29 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 $| = 1;
 
-use lib '/usr/local/bin/bechele/Modules';
-use vars qw/$api $j $resfactor $dev @joy_content $stepwidth $servores $set1 $set2/;
-if ($ConfigL::use_gamepad) {
+use Socket;
+use vars qw/@netstream $api $j $resfactor $dev @joy_content $stepwidth $servores $set1 $set2/;
+my $cfgdir=$ARGV[0];                                  # the name of the MP3 File to process
+if ( ! $cfgdir ) {                                    # stop if no argument has been passed
+  print "usage: $0 <cfg_dirname>\n";
+  exit 0;
+}
+$cfgdir=~s/\/$//;                                     # cut off trailing / to keep path clean
+require "$cfgdir/ConfigL.pm";                         # load the Config File
+my ($netport,$sendtonet,$sendtopca,$use_gamepad,$joystick_device,$serialport,$waittime_serial,$i2cport,$pwm_res,$i2c_address,$i2c_freq,$debug,$servores,$num_servos,$stepwidth,$play_full_mp3,$mp3loop,$block_popup_width,$matrix_popup_width,$max_out_pins,$dboutlist,$joystick_x_start,$joystick_x_end,$joystick_y_start,$joystick_y_end,$gamepad_start,$gamepad_stop,$gamepad_axis_y,$gamepad_axis_x,$gamepad_x_start,$gamepad_x_end,$gamepad_y_start,$gamepad_y_end,$num_servos_per_row,$OE,$NEXT,$PREV,$S1,$S2,$SHUT,$servosettings)=ConfigL::get_vars();
+if ($sendtopca) {                            # in case connecting a PCA9695 directly is desired, load the module for it
+  eval {use RPi::MultiPCA9685 qw(init_PWM setChannelPWM disablePWM);RPi::MultiPCA9685->import(qw(init_PWM setChannelPWM disablePWM));1} or die "Error loading module RPi::MultiPCA9685 $@";
+  init_i2c();
+}
+if ($use_gamepad) {
   use Linux::Joystick;
 } else {
   use Device::SerialPort qw( :PARAM :STAT 0.07 );
 }
-use ConfigL;
-use RPi::MultiPCA9685 qw(init_PWM setChannelPWM disablePWM);
-init_i2c();
 use WiringPi::API qw(:wiringPi);
 $api=WiringPi::API->new;
 $api->setup; # use wiringpi port numbers
-use warnings;
 use Time::HR;
-my $waittime_serial=8000000;                          # wait for 8 ms (8000000 ns)
 my $currentservo=0;
 my $secondservo=1;
 $SIG{INT} = \&ctrlc;
@@ -40,7 +47,9 @@ system 'tput civis';
 init_ports();
 print "\n";
 sleep 1;
+my $packet_counter=1;
 run_loop();
+
 #############################################################
 #  checks the input states and runs the mp3s according to the 
 #  key sets
@@ -51,8 +60,8 @@ sub run_loop {
     my $next=$joy_content[3];
     my $prev=$joy_content[2];
     if ($next==0) {
-      if ($currentservo < $ConfigL::num_servos - 1) {
-	setChannelPWM($currentservo,[0,0]);
+      if ($currentservo < $num_servos - 1) {
+	      #setChannelPWM($currentservo,[0,0]);
         $currentservo++;
         while ($next==0) {                            # wait until the button is released
           get_one_read();                             # read one joy set
@@ -65,7 +74,7 @@ sub run_loop {
     }
     if ($prev==0) {
       if ($currentservo > 0) {
-	setChannelPWM($currentservo,[0,0]);
+	      #setChannelPWM($currentservo,[0,0]);
         $currentservo--;
         while ($prev==0) {                            # wait until the button is released
           get_one_read();                             # read one joy set
@@ -85,11 +94,18 @@ sub run_loop {
 #############################################################
 sub put_one_move {
   $secondservo=$currentservo+1;
-  my $pos1=int($joy_content[4]/($ConfigL::servores/($$ConfigL::servosettings[$currentservo][4] - $$ConfigL::servosettings[$currentservo][3]))+$$ConfigL::servosettings[$currentservo][3]);
-  my $mref=[0,$pos1];
-  setChannelPWM($currentservo,$mref);
-  my $str="\fX-pos(0-$ConfigL::servores)	|Joystick X 	|Servo $currentservo\n-----------------------------------------------\n$joy_content[4]		|$joy_content[0]		| $pos1\n";
-  system 'tput civis';
+  my $pos1=int($joy_content[4]/($servores/($$servosettings[$currentservo][4] - $$servosettings[$currentservo][3]))+$$servosettings[$currentservo][3]);
+  my $pcaref=[0,$pos1];
+  $netstream[$currentservo]=$pos1;
+  if ($sendtopca){
+    setChannelPWM($currentservo,$pcaref);
+  }
+  if ($sendtonet){
+    send_data_broadcast(\@netstream,\$packet_counter);    # output moves via broadcast to network - seems to be quicker, though not parallel
+    $packet_counter = ($packet_counter + 1) & 0xFFFF; # increment packet counter with overflow at 65535
+  }
+  system 'tput civis';  
+  my $str="\fX-pos(0-$servores)	|Joystick X 	|Servo $currentservo\n-----------------------------------------------\n$joy_content[4]		|$joy_content[0]		| $pos1\n";
   print $str;
   &$pwm_en(0);
 }
@@ -100,11 +116,11 @@ sub init_ports {
   $api->pin_mode(5,1);                               # port 5 (pin 11) as output
   $api->write_pin(5,1);                              # init port 5 to 1
   $pwm_en=sub{$api->write_pin(5,shift)};
-  if ($ConfigL::use_gamepad) {
+  if ($use_gamepad) {
     @joy_content=(0,0,1,1);
-    $js = Linux::Joystick->new(device => $ConfigL::joystick_device,nonblocking => 1);
+    $js = Linux::Joystick->new(device => $joystick_device,nonblocking => 1);
   } else {
-    $serial = Device::SerialPort->new($ConfigL::serialport); # init the serial port at pin 10 (RXD)
+    $serial = Device::SerialPort->new($serialport); # init the serial port at pin 10 (RXD)
     $serial->baudrate(38400);
     $serial->databits(8);
     $serial->stopbits(1);
@@ -118,7 +134,7 @@ sub init_ports {
 #  initialize the i2c utility
 #############################################################
 sub init_i2c {
-  my $success=init_PWM($ConfigL::i2cport,$ConfigL::i2c_address,$ConfigL::i2c_freq,$ConfigL::num_servos);
+  my $success=init_PWM($i2cport,$i2c_address,$i2c_freq,$num_servos);
 }
 #############################################################
 #  a hires sleep ( in nanoseconds )
@@ -136,19 +152,19 @@ sub hsleep {
 #############################################################
 
 sub get_one_read {
-  if ($ConfigL::use_gamepad) {                       # ----------------------- gamepad handling ---------------------------------
+  if ($use_gamepad) {                       # ----------------------- gamepad handling ---------------------------------
     hsleep ($waittime_serial);
     my $event=$js->nextEvent;
     if ($event){
       if ($event->isButton) {
-        if ($event->button == $ConfigL::gamepad_start) {
+        if ($event->button == $gamepad_start) {
           if ($event->buttonDown){
             $joy_content[3]=0;
           } else {
             $joy_content[3]=1;
           }
         }
-        if ($event->button == $ConfigL::gamepad_stop) {
+        if ($event->button == $gamepad_stop) {
           if ($event->buttonDown){
             $joy_content[2]=0;
           } else {
@@ -157,12 +173,12 @@ sub get_one_read {
         }
       }
       if ($event->isAxis) {
-        if ($event->axis == $ConfigL::gamepad_axis_x) {
+        if ($event->axis == $gamepad_axis_x) {
           $joy_content[0]=$event->axisValue;
         }
       }
     }
-    $joy_content[4]=int($ConfigL::servores * ($joy_content[0]-$ConfigL::gamepad_x_start) / ($ConfigL::gamepad_x_end-$ConfigL::gamepad_x_start));
+    $joy_content[4]=int($servores * ($joy_content[0]-$gamepad_x_start) / ($gamepad_x_end-$gamepad_x_start));
     if ( $joy_content[4] <= 0 ) { $joy_content[4]=0; }
   } else {                                             # --------------------------- serial joystick handling ----------------------------
     my ($count,$data,$i)=(0,0,0);
@@ -172,9 +188,9 @@ sub get_one_read {
       ($count,$data)=$serial->read(32);
       if ( $count ) {                   # if we have data, put it into the array
         @joy_content=split / /,$data;
-        $joy_content[4]=int($ConfigL::servores * ($joy_content[0]-$ConfigL::joystick_x_start) / ($ConfigL::joystick_x_end-$ConfigL::joystick_x_start));
+        $joy_content[4]=int($servores * ($joy_content[0]-$joystick_x_start) / ($joystick_x_end-$joystick_x_start));
         if ( $joy_content[4] <= 0 ) { $joy_content[4]=0; }
-        $joy_content[5]=int($ConfigL::servores * ($joy_content[1]-$ConfigL::joystick_y_start) / ($ConfigL::joystick_y_end-$ConfigL::joystick_y_start));
+        $joy_content[5]=int($servores * ($joy_content[1]-$joystick_y_start) / ($joystick_y_end-$joystick_y_start));
         if ( $joy_content[5] <= 0 ) { $joy_content[5]=0; }
       } else { $serial->purge_all(); }  # else try again
       if ($i >= 10) { die "serial device does not respond\n";}
@@ -182,6 +198,48 @@ sub get_one_read {
     }
   }
 }
+#############################################################
+#  ouput the movement data via network as broadcast
+#############################################################
+sub send_data_broadcast {
+  my ($data_array_ref,$pk_ct_ref) = @_;
+  my $data_length = scalar(@$data_array_ref);               # determine data length
+  my @packet_data = ($data_length, $$pk_ct_ref, @$data_array_ref);# size  + packet counter + data
+  socket(my $sock, PF_INET, SOCK_DGRAM, getprotobyname('udp')) or die "Could not create Socket: $!";
+  setsockopt($sock, SOL_SOCKET, SO_BROADCAST, 1) or die "Could not activate broadcast: $!";
+  my $dest_addr = sockaddr_in($netport, INADDR_BROADCAST);  # set broadcast destination address
+  my $packed_data = pack('n*', @packet_data);               # convert data into big endian for the network
+  add_crc16_to_scalar(\$packed_data);                       # add the CRC at the end
+  send($sock, $packed_data, 0, $dest_addr) or die "Send Error: $!"; # send to the network
+  close($sock);
+  return 1;
+}
+#############################################################
+#  calculate and add the CRC for the datagram
+#############################################################
+sub add_crc16_to_scalar {
+    my ($data_ref) = @_;  # Referenz auf Skalar (Binary String)
+
+    my $crc = 0xFFFF;
+
+    # Bytes aus dem String verarbeiten
+    foreach my $byte (unpack('C*', $$data_ref)) {
+        $crc ^= $byte;
+        for (my $i = 0; $i < 8; $i++) {
+            if ($crc & 0x0001) {
+                $crc = ($crc >> 1) ^ 0xA001;
+            } else {
+                $crc >>= 1;
+            }
+        }
+    }
+
+    # CRC als 2 Bytes an den String anhängen (Little-Endian)
+    $$data_ref .= pack('v', $crc);  # 'v' = 16-bit Little-Endian
+}
+#############################################################
+# quit an clean up
+#############################################################
 sub ctrlc {
   $SIG{INT} = \&ctrlc;
   disablePWM();

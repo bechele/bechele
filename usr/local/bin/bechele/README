@@ -3,33 +3,38 @@ Further infos under www.bechele.de
 Author Rolf Jethon
 
 bechele,de is a Raspberry Pi project, that enables you to create movement models
-like hand puppets, dance puppets or animal robots with simultaneous output of
-audio data and servo movement to awake these models to life, without the need of
-programming.
+like hand puppets, dance puppets or animal robots or even whole groups of 
+gharacters with simultaneous output of audio data and servo movement to awake
+these models to life, without the need of programming.
 
-Instead of a Raspberry Pi a OrangePi PC or any other rasperry pi like linux 
+Instead of a Raspberry Pi, a OrangePi PC or any other rasperry pi like linux 
 based micro computer can be used - For Raspberry Pi and OrangePi PC separate SD
 card images exists.  
 
 All required project scripts reside in folder /usr/local/bin/bechele.
 
 Basics
-To move a movement robot syncronized to music or speech, it is required to add
+To run a movement robot syncronized to music or speech, it is required to add
 the movement in some way according to the tone. In this project this happens by
 moving a joystick by hand synchronous to the sound. At the same time the 
 movements will be output to the servos to be able to check the results on the 
-fly. The number of recording channels is not limited by software but by chip 
-timing and hardware. There is a hardware limit of a maximum of 64 PCA9685 
-boards. Another limit is the chip timing for addressing all servos. Timing is 
-depending on the refresh rate of the movements. Currently this is 50 ms or 20
-Hz. With 20Hz refresh rate a maximum of approx. 120 Servos can be addressed. 
-If you need to address more servos you need to change the refresh rate, 
-otherwise there is not enough time to set all servos. In case of the example 
-puppet, the number of Servos in use is only 8. This limitation is just 
-coincidencial and not a limit for other projects. 
+fly. The number of recording channels is not limited by software but by a
+bunch of environment conditions, since the latest version allows to use
+network devices for Servo and relais output in addition to the PCA9685 devices 
+For the PCA 9685 devices there is a hardware limit of a maximum of 64 PCA9685 
+boards. For Network devices there are different limits: For 1 network packet of 
+1432 byte, approximately 700 Servos may be addressed and approx. 11000 Relais. 
+Another limit is the chip timing for addressing all servos. Timing is depending
+on the refresh rate of the movements. Currently this is 50 ms or 20 Hz. With 
+20Hz refresh rate a maximum of approx. 120 Servos can be addressed using the 
+PCA9685 devices. For network devices there is no such timing limit, if you do
+not need higher refresh rates. If you need to address more servos you need to 
+change the refresh rate, otherwise there is not enough time to set all servos.
+In case of the example puppet heads, the number of Servos in use is only 24.
+This limitation is just coincidencial and not a limit for other projects. 
 Because with a joystick only two channels can be recorded, the recording of all
-channels need to be done sequentially. In case of Mr. Bechele I recorded first 
-the mouth movement according to the speech audio mp3 file. Because mouth 
+channels need to be done sequentially. In case of my samples I recorded first 
+the mouth movements according to the speech audio mp3 file. Because mouth 
 movements are very quick they need full concentration to acieve a more or less 
 accurate result. Therefore I just recorded one channel only, though I had two 
 channels available. Then I recoreded the eye lid movement with also only one 
@@ -43,7 +48,7 @@ impression the puppet really talks to the puppet player.
 Working principle:
 A movement set consists always of a mp3 sound file, and a .svo file that
 contains the movement information for the servos. Optionally a text file with
-the same name may exist, that contains text hints for the puppet player - in case
+the same name may exist, that contains text hints for the puppet player- in case
 you don't want to learn all the dialogs by rote. This text will then be shown on
 the terminal window, you started the program from. 
 
@@ -67,6 +72,17 @@ mechanical movement range of the servo in the model. In other words: The servo
 -despite parametrized correctly- does never try to exceed its mechanical 
 limits in the model.
 
+New introduced network devices: 
+With the latest Software 3.0 the bechele software now supports beside the
+existing PCA9685 PWM Boards also network devices, based on cheap ESP32 modules.
+Each network device may handle 16 Servos or 16 Relais or a desired mixture of
+both. All the data transfers from the Host (Raspi) is realized using broadcast
+transmissions, where all devices (nodes) receive the same data packets. 
+According to the node configuration, the node takes the data from the packet 
+that is intended for it. This way there is plenty of time to drive 700 Servos @
+44 ESP32 nodes, or 11000 relais @ 700 nodes with a 50ms refresh rate. Network 
+devices may be connected via Ethernet or WiFi. Of course Ethernet driven nodes
+are more stable than via Wifi. 
 ------------------------------------------------------------------------------
 Installation:
 The easiest way is to write a pre-defined SD card image to a SD card and you are
@@ -92,11 +108,13 @@ you need:
       )
    alsa-utils (required)
    mpg123 (required)
-   i2c-tools (required)
+   i2c-tools (required) if you use PCA9685 devices
    perl 5 (probably pre-installed - required)
    perl-device-serialport (required)
    libncurses5-dev (required)
    libncursesw5-dev (required)
+   gpm
+   libgpm-dev
 
 Further you need to install some perl modules - easiest is to use:
 cpanm <Modulname>
@@ -104,15 +122,27 @@ Many modules depend on other modules, so that the installation may take a while.
 
  PERL MODULES:
    strict
+   Socket
    RPi::I2C
+   WiringPi::API
    RPi::MultiPCA9685
    Device::SerialPort
    Curses::UI
+   Curses::UI::Mousehandler::GPM
    WiringPi::API 
    File::Find::Rule
+   File::Copy
+   File::Spec
+   File::Temp
+   Text::Table
    Linux::Joystick
    Audio::Play::MPG123
    Time::HR
+   Data::Dump
+   POSIX
+   DBI
+   DBD::SQLite
+   bigfloat
    ConfigL (This comes along with the tar ball and does not need to be installed)
 
 After the installation, some parameters need to be set - see section 
@@ -131,62 +161,52 @@ trackui.pl: (for joystick and gamepad)
   aquired sequentially. Probably nobody may control all servos simultaneously, 
   so a correct movement results.
   By using the user interface it's possible to combine movements. For example
-  several servos may execute the exactly the same movement. The movement 
-  control of a servo group may be assigned to a joy stick axis. This is for 
-  example necessary if a puppet has seperate servos for each eye lid. You don't
-  want to record each lid seperately but record them togehter because they 
-  almost move together. If for an exception one lid shall be moved different
-  from the other, you may record one eye lid in a subsequent record cycle by
-  just defining a limited time range, instead of the complete number of movement
-  steps within a single MP3 file. Depending on the number of servos and the 
-  complexity of your movements, you may repeat recording as often as you like    
-  with servos activated or de-activated as you need, until the movement fits to
-  the sound as desired.
+  several servos may execute exactly the same movement. The movement control of
+  a servo group may be assigned to a joy stick axis. This is for example 
+  necessary if a puppet has seperate servos for each eye lid. You don't want to
+  record each lid seperately but record them togehter because they almost move
+  together. If for an exception one lid shall be moved different from the other,
+  you may record one eye lid in a subsequent record cycle by just defining a
+  limited time range, instead of the complete number of movement steps within a
+  single MP3 file. Depending on the number of servos and the complexity of your
+  movements, you may repeat recording as often as you like with servos 
+  activated or de-activated as you need, until the movement fits to the sound 
+  as desired.
    
   control elements of trackui.pl:
   Section File:
   Here you select the file (.svo/.mp3) to process. Usually you will process the 
   files defined by passing a folder as a program start parameter. 
   With << Prev Next >> you may move through the folder. The requirement is alway
-  an existing MP3 file. For this file a belonging .svo file will be created or
-  modified. If a .svo file already exists this may be output or modified.
-  With the double arrows you may move in steps of 10 files. This is helpful if
-  you want to navigate to a desired file quickly, because solution dependent,
-  processing single files may be impossible or pedestrian. 
-  Save saves the .svo file finally.
+  at least one existing MP3 file. For this file a belonging .svo file will be 
+  created or modified. If a .svo file already exists this may be output or 
+  modified. With the double arrows you may move in steps of 10 files. This is
+  helpful if you want to navigate to a desired file quickly, because solution
+  dependent, processing single files may be impossible or pedestrian. 
+  Save saves the .svo file finally. The button "Block_operation" opens a new 
+  window, with block save/load operations - see section "Block operations".  
 
   Operation elements on the joy stick:
-  Key right: starts recording or viewing (trigger).
-  Key left: stops recording and returns to the menu.
-
-  Section Channel X:
-  Here you may activate the servos, that shall be recorded during the cycle by
-  moving the joy stick X-direction. By activating one or more check boxes the 
-  servos will be bound to the Joy stick axis for a subsequent recording walk
-  trough. After the walk trough you may select other servos and make a new walk
-  trough. Not selected servos remain then unaffected. You almost  activate only
-  one servoi at a time, but several may be selected. These will then be moved
-  and recorded simultaneously.
-
-  Section Channel Y:
-  Like Channel X, but here the Y-direction of the joy stick will be used for 
-  controlling.
+  Key 1: starts recording or viewing (trigger).
+  Key 2: stops recording and returns to the menu.
 
   Track Sets:
+  The Button "Set_servo_matrix" opens a new window, where you can define which 
+  servos or relais to process. See section "Set_servo_matrix" for details.
   A track contains all movement steps that corrospond to a mp3's play duration.
   In the default setting, movements will be recorded every 50 ms (20Hz). A 20 
   second MP3 results then in 400 movement way points. 
-  Start at move: Is the start time of a record in steps of "$ConfigL::stepwidth" 
-  Stop at move: Is the stop time in steps of "$ConfigL::stepwidth" Using these 
-  fields only a fraction of the mp3 time may be recoreded or viewed.
+  Start at move: Is the start time of a record in steps of '$ConfigL::stepwidth' 
+  Stop at move: Is the stop time in steps of '$ConfigL::stepwidths' Using these 
+  fields only a fraction of the mp3 time may be recorded or viewed.
   The Check box 'Update "maximum Move" field at the end of the mp3' controls
-  that after the MP3 has finished the number of movements at the end will 
+  that after the MP3 has finished, the number of movements at the end will 
   be noted in field "Maximum move:" After reloading a new MP3 where no .svo
   file exists, the box will be checked automatically, so the determination
   of their maximum number of moves will take place with the first recording, 
   after it will be unchecked automatically. This process can be repeated 
   manually at any time by checking the box and a subsequent recording till the
-  MP3 ends. The Check box 'record or output all moves independent of Start and
+  MP3 ends. The Check box 'record/output all moves independent of Start and
   Stop moves' allows to output or record for the complete time range from start
   to the end of the mp3. This is helpful, if you want to limit the recording
   time to a fraction of the whole mp3 length, but want to see the results within
@@ -195,13 +215,28 @@ trackui.pl: (for joystick and gamepad)
   conjunction with the 'Copy Servos' section. Here they limit the fields to be 
   copied.
 
+  Set_servo_matrix:
+  Here you may activate the servos, that shall be recorded during the cycle by
+  moving the joy stick X-direction. By activating one or more check boxes the 
+  servos will be bound to the Joy stick axis for a subsequent recording walk
+  trough. After the walk trough you may select other servos and make a new walk
+  trough. Not selected servos remain then unaffected. You almost activate only
+  one servo at a time, but several may be selected. These will then be moved
+  and recorded simultaneously. Since the software may need to handle lots of
+  Servos, the Window is devided in notebook tabs. Depending on the Servo 
+  and Relais definitiion in ConfigL.pm, you may see more than one notebooks,
+  or even lots of them. With the new software 3.0 both, X and Y servo bindings
+  will be shown in the same window. So finally it is easier to keep the 
+  overview. If you selected several servos or relais at once, you may use the 
+  key combination Ctrl-e to clear all ckeck boxes at once.
+
   Copy Servos:
   Here you may copy already captured movements to other servos. The copying 
   process respects the values in 'Start at move' and 'Stop at move' and copies
   only the range specified. This is helpful if you want to copy only the moves
   within a certain time slice of a complete servo track. With the 'Copy' button
   you start copying the defined ranges. It is possible to copy serveral servos 
-  at once by definig a servo range using the 'From svo:' and the 'Till:' fields.
+  at once by defining a servo range using the 'From svo:' and the 'Till:' fields
   The range spans the number of servos to copy. The servos within the span then
   will be copied to the destination in the 'To:' field. The 'To' field is the
   first position to copy to. Other servos in the span will be copied to 
@@ -227,8 +262,9 @@ trackui.pl: (for joystick and gamepad)
  
   Process:
   Record starts a recording according to the servo activation. Not activated
-  servos will be played only. All servos de-activated is the same like 'view'
-  View outputs a MP3 and movements only.
+  servos will be played only. All servos de-activated is the same like 'view',
+  except, that no values are displayed if "view all servos" is not active.
+  View outputs MP3 and movements only.
   'View all servos' when active, shows all servo movement values of all servos.
   'View all servos' when inactive shows only the servo values of the activated 
   servos in the servo section. This helps often to keep the overview, when many
@@ -243,7 +279,31 @@ trackui.pl: (for joystick and gamepad)
   get 500 and each move in between gets a different value along the vector 
   from 0 to 1000. Also here vectors may be ascending, descending on may remain
   the same over the complete range, depending on your settings.
+  Since Fill may be also used to fill the relais data words - (1 word keeps 16 
+  bits reflecting 16 possible relais output pins) - There arises a small issue,
+  because Servo data only uses 12 bits (0-4096), but Relais words need up to 16
+  bits (0-65535). If you would fill Servo data position words with 16 bits, the
+  result would be unpredictible. Therefore usually field values will be 
+  checked before saving them, so Servo values never exceed 4096. In rare cases,
+  where Bitdata is required for a network node having all 16 bits configured for
+  Relais, you would not be able to set the bitpattern for all 16 pins. For this
+  rare case the button "Unlimit Range" exists. However, it is rather unlikely,
+  that a node has configured only relay pins. Usually it is rather only servos,
+  or a few relay pins in addition. Only if you exceed 12 relais on on node, you 
+  may use this option. See section "nodeconfig.pl" for details.
   
+  Block_operations:
+  With this new utility you may save and load blocks of already existing servo
+  or relais data to or from a file. I the file section you may toggle or jump
+  through existing block files in the directory shown or entered in the Path:
+  field. By pressing "Export" you write the data specified in Section "Block
+  Range". By pressing "Import" you import a previously saved block. If files 
+  exist and you toggle through them, the data range will be shown in the 
+  fields. If you want to load a saved block only partially, you may change the
+  fields in "import as". The block description Section can be edited and will 
+  be saved along with the file. Describe the block as you like to find it later
+  easily. The more blocks you save, the more important becomes the description.
+
   Status:
   Here useful program messages will be shown.
   
@@ -256,7 +316,7 @@ trackui.pl: (for joystick and gamepad)
   row on a smaller screen you may need to reduce the number of servos in a row 
   to fit into the screen. If not all defined servos fit into one row, the 
   interface puts the remaining servos into a new tab or notebook. Depending on
-  the overall number of servos defined, the number of notebooks may be up to 8.
+  the overall number of servos defined, the number of notebooks may be large.
   To toggle trough the notebooks (servo pages) press button PgUp or PgDn on 
   your keyboard. To set the number of servos per page you need to modify the 
   parameter "$num_servos_per_row" in Modules/ConfigL.pm If you get the message 
@@ -268,7 +328,6 @@ trackui.pl: (for joystick and gamepad)
   increased any more via the config file Modules/ConfigL.pm To increase the
   nuber of servos you need to delete the .svo file manually. So it is a good 
   idea to consider the number of servos you need before starting with recording.
-  
 
 live.pl
   This program outputs during the presentation the sound along with the 
@@ -293,8 +352,127 @@ live.pl
   Button 4:
   Outputs the next sequence in folder "extra" of the output directory. 
   If several sequences are stored there, with each repeat the following sequence
-  will be output. Folder extra  may be just a laugh or a reaction sequence to the 
-  audience.
+  will be output. Folder extra  may be just a laugh or a reaction sequence to 
+  the audience.
+
+nodeconfig.pl
+  This application is needed to set up network devices - also called nodes -
+  Nodes have a network interface, they may receive data whether via WiFi or 
+  Ethernet. Nodes are listening to broadcasts on UDP port 7625. UDP data packets
+  will be sent from the Master - in our case usually a Raspberry Pi or similar.
+  These packets may contain, whether servo and relais data, or configuration
+  commands. In fact, data words for Servos or for Relais do not differ. This 
+  means Relay data can be easily output by a servo movements and Relais words 
+  as Servo movements. Only the node configuration defines what is used as Servo
+  or relais data. nodeconfig.pl will send configuration commands to nodes to 
+  allow them reacting to later operation data packets in the configured way. In
+  order to receive and output data commands as servo or relay actions, each node
+  needs to be configured, since operation broadcast datagrams may contain data 
+  for multiple nodes. nodeconfig.pl sets up, which data in the datagram is 
+  intended for the node to be configured, and how this data is used inside the
+  node. To be able to configure a specific node, it first of all needs a node 
+  address. A new, empty node, has initially no node address. The node address is 
+  configured over the network using a basic configuration command. By setting
+  the jumper "Bas Conf" on the nodes hardware, the node is made sensitive for 
+  the basic command. The basic command sets the node address and also the MAC 
+  address of the node. This implies, that only one node's "Bas Conf" jumper in
+  the network at a time must be set. If more than one node in the network has
+  the same MAC address, you probably encounter trouble in this network, so it
+  is essential to pass each node a different node and MAC address.
+  nodeconfig.pl supports you in this matter, but it cannot prevent you always
+  in doing something wrong, so keep this in mind.
+
+Buttons, fileds and controls in nodeconfig.pl:
+  "Node Address:" is the unique number of the network or wlan box (node), you
+    may connect servos or relais to. The node address can be only transferred, 
+    if the "Base Conf" jumper is set on the node. Make sure not to give two
+    nodes the same node number !
+  "MAC Address:" is the network address of the node, that must be unique within
+    your ethernet network segment. The last two bytes of the MAC address are the
+    node number in hexadecimal format. To change the Base, press the button.
+  "New_MAC_Base". The MAC can be only transferred, if the "Base Conf" jumper is
+    set on the node. Make sure to set only one node jumper at a time!
+    !!!!!! Otherwise you mess up your network !!!!!!'
+  "Number of Servos:" defines how many Servos are connected to this node. The
+    range is 0 to 16. If a node shares its ouput pins with relay outputs, the 
+    pins must not overlap. Servo outputs and relay outputs may start at higher
+    numbers. So both, relais and servos may be connected to same node.
+  "SVO # is SVO at pin" Servo numbers defined in ConfigL.pm are mapped to the
+    pins of your node. Where ConfigL.pm servo number entered here, will be 
+    mapped to the servo connected to pin "1st SVO starts at pin"  and
+    automatically all subsequent servo numbers will be mapped to the next pins,
+    until the "Number of servos" defined in the previous field is reached.
+  "1st SVO starts at pin" The Servo number set in "SVO # is SVO at pin" will be
+    mapped to this pin of your box. The range is: 0 to 15. For example: If you
+    set 'Number of Servos' to 5 and  "SVO #..." to 10 and "1st SVO..." to 4,
+    then Servo10 configured in ConfigL will be mapped to Pin 4 of your box,
+    Servo11 to Pin5 .. and Servo14 to Pin 8.
+  "Number of Relais" defines how many relais are connected to this node. The 
+    range is 0 to 16. If a node shares its ouput pins with servo outputs, the
+    pins must not overlap. Servo outputs and relay outputs may start at higher
+    numbers. So both, relais and servos may be connected to same node.
+  "SVO # keeps Relais data" Relais are controlled out of servo data, where one
+    servo position contains 16 bit = maximum 16 relais. This servo number
+    defined in ConfigL.pm will be mapped to the pins of your node. If a node has
+    only relay outputs, and the "Number of Relais" is 16, Each bit of the servo
+    data word will be output to its referred pin of the node.
+  "1st Relay starts at pin:" This value is important, if a node shares servo and
+    relay pins. It defines where the relay bit data will be mapped onto the
+    output pins. For example: If you have 12 servos and 4 relais for your node,
+    then the 'Number of Servos' becomes 12, the "Number of Relais" becomes 4 and
+    the '1st Relay starts at Pin:' becomes 13.
+  "BasicSetup" Sends the node address and MAC to all nodes with set "Bas Conf"
+    jumper. !Warning!: only one 'Bas Conf' jumper must be set at a time.
+    "Identify Node" Pressing this button will send a blink command to the node.
+    This is to be able to identify a node, in environments where several nodes
+    are installed.
+  "Reboot_Node" Forces to reboot the node.
+  "Reboot_Network" Forces to reboot all nodes in the whole Network.
+  "Unconigure_Node" Unconfigures all values of the node. Keep in mind you need
+    to re-configure all node parameters, including the need to set the bas conf
+    jumper after this command. Use with care !!!!
+  "Get_Node_Status" Requests the configuration status from the node and displays
+    it if received.
+  "Send_Node_Setup" Sends all node specific configuration data at once, of
+    course excluding node address and MAC 
+  "Output_DB" This button outputs a database list to file or screen using the
+    checkbox options provided.
+
+nodeconfig.pl and its data base:
+  All node configuration attempts, means pressing the button 'Send_Node_Setup'
+  and 'Base_config' attempts will be stored in the data base nodeconfig.db that
+  resides in the configuration directory of a scene. At the end of a 
+  'Send_Node_Setup' command, the node is requestesd to respond with its
+  configuration. If the received configuration matches the sent one in the data
+  base, the node will be marked with confirmed. This tells, that the node is
+  really set up as shown in the data base. If a node is not marked as confirmed
+  you may try to resend the configuration. 
+  Once a node is in the data base its settings will be shown in the fields. 
+  This means, re-sending a configuration is just one click away. In a real 
+  installation it is recommended to note the node number on the nodes case, so
+  it is easy to keep an overview on large installations.
+------------------------------------------------------------------------------
+new Parameters with Bechele 3.0
+  With Bechele Software 3.0 new parameters in ConfigL.pm have been introduced:
+  "mp3loop": Is relevant for live.plIs relevant for live.pl It may be important
+    for unattended installations, where guests trigger the play of the scene byi
+    a light barrier or similar. At the end of all mp3 files, the scene loops to
+    the firs mp3 again. 
+  "play_full_mp3": If set to 1, the default behaviour to skip immediately to the
+    next mp3 file changes. So a mp3 along with its movements is played always 
+    fully. With a new trigger the next file will then be played. 
+  "netport": this is the port the network deviced use to receive boroadcast
+    movement data. Keep this number always on the defaults. If you change it, 
+    you need to change the port also in the ESP node firmware. This means the 
+    firmware needs to be re-compiled.
+  "sendtonet": needs to be set to 1 if network devices shall be supported.
+  "sendtopca": needs to be set to 1 if directly connected PCA9685 boards shall
+    be supported.
+  "block_popup_width": Defines the width of the block operation setup window.  
+  "matrix_popup_width": Defines the width of the actuator matrix window.
+  "max_out_pins": Number of pins supported by ESP network devices.
+  "dboutlist": Defines the output file name and path for database summary files
+    of nodeconfig.pl
 
 servokalib.pl (2-channel) and servocalib-single.pl (1-channel) 
   This program is used for a first test of new servos and to determine the
@@ -304,7 +482,6 @@ servokalib.pl (2-channel) and servocalib-single.pl (1-channel)
   Operation elements on the joy stick:
   Key right: switches the joy stick to the next servo.
   Key left: switches the joy stick to the previous servo.
- 
 
 X-pos(0-4096)   |Y-Pos(0-4096)  |Joystick X |Joystick Y |Servo 0    |Servo 1
 -----------------------------------------------------------------------------
@@ -332,16 +509,15 @@ cksum
 gamepad.pl
   helper program to figure out the button and axis numbers of a new gamepad.
 
-Record tips:
+Recording tips:
   Create your audio files with a longer silence at the end. So the puppet may
   continue to move while the puppet player responds. When the button for the 
   next sequence will be pressed, the current will be stopped immediately and 
   the subsequent one starts. Better record the model movements a bit longer, so
   the puppet does not look "static" in speech pauses. 
-
 ------------------------------------------------------------------------------
 Configuration:
-After installation parameters perhaps need to be modified, before you may start
+After installation, parameters perhaps need to be modified, before you may start
 with playing or recording. 
 
 Setting up program parameters:
@@ -349,26 +525,37 @@ $use_gamepad=1;            - if 1 the gamepad will be used as input device if 0
                              the self made joystick
 $joystick_device=0;        - The linux joystick hardware device - 1 or 0
 Serialport ($serialport)   - According to the hardware in use.
-i2c port ($i2cport)        - According to the hardware in use.
+i2c port ($i2cport)        - According to the hardware in use.(only relevant if 
+                             $sendtopca is 1)
 i2c Adress ($i2c_address)  - According to the address in use. (tip: detect with
-                             i2cdetect )
+                             i2cdetect - Only relevant if $sendtopca is 1)
 $stepwidth=50000000        - the refresh rate in ns (Nanoseconds) at which 
                              moves will be captured and output. Defaults to
                              50 ms or 20Hz
-
+$sendtopca                 - activates to send data to the PCA9685 devices
+                             connected directly to the GPIO Port of the Raspi.
+$sendtonet                 - activates to send data to the network vi broadcast
+                             The node receiveing the data needs to be setup
+                             on which data it reacts, since all servo and relay
+                             data is sent onto the network in one packet.
+$max_out_pins              - always 16 for the current ESP32 nodes.
 
 Setting up the number of servos in use:
 Edit file: /usr/local/bin/Modules/ConfigL.pm
 Change the entry:
 $num_servos=57;                      # number of servos in use - not limited
-Of course you need these Servos attached.
+Of course you need these Servos set up in the data structure of $servosettings.
+iAnd the structure must contain that many entries. With the default ConfigL.pm
+file 64 Servos are prepared in the data structure $servosettings. So if you want
+to use more than 64 Servos, you needto extend this data structure. Just 
+duplicate some of the lines in the middle to get more servos.
 
-Setting the refresh rate of the servos (how often a new movement paramete will 
+Setting the refresh rate of the servos: (how often a new movement paramete will 
 bes sent to the servo). The cycle time is in ns (Nanoseconds) the default is 
 50000000 this is a frequency of 20 Hz
 To change the default, change parameter $stepwidth=50000000; in File ConfigL.pm
 Please note, that the stepwidth will be overwritten during the loading of a 
-servo (.svo) file. In other words as long as you have a svo file, the parameter
+servo (.svo) file. In other words, as long as you have a svo file, the parameter
 in the ConfigL.pm has no effect. To change the refresh rate, you need to delete
 the .svo file and restart trackui.pl or load a svo file with a different refresh
 rate. 
@@ -395,7 +582,7 @@ to figure out which button has which number.
 
 Setting up a servo:
 With servos we have the following parameter sets:
-1. The whole possibe movement range of a servo (not mounted in the model).
+1. The whole possible movement range of a servo (not mounted in the model).
    This is used to parametrize the servo type so when running servocalib.pl,
    the servo is already preset and reacts accordingly.
    (servolimit start + servolinit end)

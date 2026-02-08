@@ -1,3 +1,7 @@
 #!/bin/sh
-minicom -b 38400 -o -D /dev/ttyAMA0
+#minicom -b 38400 -o -D /dev/ttyAMA0
+minicom -b 38400 -o -D /dev/ttyS3
+
+
+
 

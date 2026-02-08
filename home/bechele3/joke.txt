@@ -1,0 +1,1 @@
+This is the text file that will be shown along with the mp3 file on the screen as a show hint

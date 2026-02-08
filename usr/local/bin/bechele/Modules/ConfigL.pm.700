@@ -1,0 +1,800 @@
+#!/usr/bin/perl -w
+#   Settings file for servo and application specific limits
+#   Copyright (C) <2015-2026>  <Rolf Jethon>
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package ConfigL;
+our $VERSION = '0.03';
+
+sub get_vars { 
+  return($netport,$sendtonet,$sendtopca,$use_gamepad,$joystick_device,$serialport,$waittime_serial,$i2cport,$pwm_res,$i2c_address,$i2c_freq,$debug,$servores,$num_servos,$stepwidth,$play_full_mp3,$mp3loop,$block_popup_width,$matrix_popup_width,$max_out_pins,$dboutlist,$joystick_x_start,$joystick_x_end,$joystick_y_start,$joystick_y_end,$gamepad_start,$gamepad_stop,$gamepad_axis_y,$gamepad_axis_x,$gamepad_x_start,$gamepad_x_end,$gamepad_y_start,$gamepad_y_end,$num_servos_per_row,$OE,$NEXT,$PREV,$S1,$S2,$SHUT,$servosettings);
+}
+# common configuration file
+#--------------------------------- globally used constants ---------------------------------
+$netport=7625;                                  # the network port nodes are listening to - change only if you also recompile the nodes
+$sendtonet=1;                                   # Output the moves to network devices via broadcast
+$sendtopca=0;                                   # Output the moves to a directly connected PCA9685 PWM chip
+$use_gamepad=1;                                 # 0= serial joystick 1= usb gamepad
+$joystick_device=0;                             # joystick 0 or 1 - only if gamepad is active
+$serialport="/dev/ttyAMA0";                     # serial port to read the joystick from
+$waittime_serial=12000000;                      # wait for 12 ms (12000000 ns)
+$i2cport="/dev/i2c-1";                          # i2c port to send the servo movements to
+$pwm_res=4096;                                  # the resolution of the PCA9685 PWM
+$i2c_address=0x40;                              # the I2C Address of the first PWM Board - subsequent PCBs automatically  +1
+$i2c_freq=50;                                   # the frequency of the PWM in Hz
+$debug=0;                                       # debug mode switch
+$servores=4096;                                 # the virtual resolution of the servos
+$num_servos=700;                                # number of servos in use
+$stepwidth=50000000;                            # use a refresh rate of 50 ms (50000000 ns / 20 Hz)
+$play_full_mp3=0;                               # If 1 the mp3 plays till the end - no switch to the next mp3 on button press 
+$mp3loop=0;                                     # after last mp3 - what to do - loop or stay with the last file
+$block_popup_width=90;                          # The width for the block popup window
+$matrix_popup_width=174;                        # The width for the matrix popup window
+$max_out_pins=16;                               # Number of output pins for network PWM devices
+$dboutlist="/tmp/dbout_";                       # File database output list is written to
+#------- only relevant if joystick is in use ---------------
+$joystick_x_start=0;                            # The joystick x mechanical start limit value
+$joystick_x_end=939;                            # The joystick x mechanical end limit value
+$joystick_y_start=0;                            # The joystick y mechanical start limit value
+$joystick_y_end=939;                            # The joystick y mechanical end limit value
+#use these values for joystick calibration:
+#$joystick_x_start=0;                           # The joystick x mechanical start limit value
+#$joystick_x_end=1024;                          # The joystick x mechanical end limit value
+#$joystick_y_start=0;                           # The joystick y mechanical start limit value
+#$joystick_y_end=1024;                          # The joystick y mechanical end limit value
+#------- only relevant if gamepad is in use ---------------
+$gamepad_start=0;                               # define which gamepad button starts
+$gamepad_stop=1;                                # define gamepad button that stops
+$gamepad_axis_y=1;                              # define the gamepad axis y
+$gamepad_axis_x=2;                              # define the gamepad axis x
+$gamepad_x_start=-32767;                        # The axis x mechanical start limit value
+$gamepad_x_end=32767;                           # The axis x mechanical end limit value
+$gamepad_y_start=32767;                         # The axis y mechanical start limit value
+$gamepad_y_end=-32767;                          # The axis y mechanical end limit value
+#------- Settings for the trackui.pl screen  ---------------
+$num_servos_per_row=25;                         # number of servos shown in each notebook page ( min 25 )
+# !!!!!! NOTE: !!!!!!!!!!!! NOTE: !!!!!!!!!!!! NOTE: !!!!!!!
+# ! Terminal columns must be at least $num_servos_per_ row + 5, otherwise an error will occur:
+# ! Your screen is currently too small....
+# ! The number of terminal rows must be at least 147 - otherwise you get the same error....
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#-----------------------------------------------------------
+#you need to comment out one of the following blocks to do a correct pin assignment
+#-----------------------------------------------------------
+#------- Settings for the GPIO pins OrangePI PC ------------
+#$OE=5;                                          # pin 11 Output enable for PCA9685
+#$NEXT=6;                                        # pin 12 next MP 3 button
+#$PREV=9;                                        # pin 16 previous MP3 button
+#$S1=10;                                         # pin 18 S1 Button
+#$S2=13;                                         # pin 22 S2 Button
+#$SHUT=2;                                        # pin 7  SHUT Button
+#------- Settings for the GPIO pins RASPI 1B ---------------
+$OE=0;                                          # pin 11 Output enable for PCA9685
+$NEXT=1;                                        # pin 12 next MP 3 button
+$PREV=4;                                        # pin 16 previous MP3 button
+$S1=5;                                          # pin 18 S1 Button
+$S2=6;                                          # pin 22 S2 Button
+$SHUT=7;                                        # pin 7  SHUT Button
+
+# The following anonymous array represents the servo limit positions in pulses of a maximum of $servores
+#----------------Servostart,Servoend,invert,servolimit start,servolimit end,label-----------------------
+# servolimit is the mechanical stop limit of the servo itself, that must not be exceeded
+# servostart and servoend (min. 0 - max. $servores) is the mechanical limit within the application that must not be exceeded
+# invert 0 = non invertet, 1= inverted, 2= marks line as relais setting
+# label refelects the servo function within the application
+# The value range of "Servostart","Servoend","servolimit start" and "servolimit end" is 0 to 4096
+# If you want to address more than 64 servos, you need to extend the array below accordingly
+# read also the README file in /usr/local/bin for details
+$servosettings=[[76,534,0,76,534,'EyeRight left/right'],           # Servo 0 
+	        #[10,700,0,10,700,'only for servo calibration'],   #Set these values to do the first Servo calibration within servocalib.pl to determine the servo type limits
+                [76,534,0,76,534,'EyeLeft left/right'],            # Servo 1
+                [76,534,0,76,534,'EyeRight up/down'],              # Servo 2
+                [76,534,0,76,534,'EyeLeft up/down'],               # Servo 3
+                [76,534,0,76,534,'LidRight'],                      # Servo 4
+                [76,534,0,76,534,'LidLeft'],                       # Servo 5
+                [76,534,0,76,534,'EyeAngle'],                      # Servo 6
+                [76,534,0,76,534,'Mouth up/down'],                 # Servo 7
+                [76,534,0,76,534,'Mouth width'],                   # Servo 8
+                [76,534,1,76,534,'Head rotation'],                 # Servo 9
+                [76,534,0,76,534,'Head left/right'],               # Servo 10
+                [76,534,0,76,534,'Head forwar/back'],              # Servo 11
+                [76,534,0,76,534,'EyeRight left/right'],           # Servo 12
+                [76,534,0,76,534,'EyeLeft left/right'],            # Servo 13
+                [76,534,0,76,534,'EyeRight up/down'],              # Servo 14
+                [76,534,0,76,534,'EyeLeft up/down'],               # Servo 15
+                [76,534,0,76,534,'LidRight'],                      # Servo 16
+                [76,534,0,76,534,'LidLeft'],                       # Servo 17
+                [76,534,0,76,534,'EyeAngle'],                      # Servo 18
+                [76,534,0,76,534,'Mouth up/down'],                 # Servo 19
+                [76,534,0,76,534,'Mouth width'],                   # Servo 20
+                [76,534,0,76,534,'Head rotation'],                 # Servo 21
+                [76,534,0,76,534,'Head left/right'],               # Servo 22
+                [76,534,0,76,534,'Head forwar/back'],              # Servo 23
+                [0,0,2,0,0,'Relay0,Relay1,Relay2,Relay3,Relay4,Relay5,Relay6,Relay7,Relay8,Relay9,Relay10,Relay11,Relay12,Relay13,Relay14,Relay15'],                     # Servo 24
+                [0,0,2,0,0,'REL1,REL2,REL3,REL4,REL5'],            # Servo 25
+                [76,534,0,76,534,'Servo 26'],                      # Servo 26
+                [76,534,0,76,534,'Servo 27'],                      # Servo 27
+                [76,534,0,76,534,'Servo 28'],                      # Servo 28
+                [76,534,0,76,534,'Servo 29'],                      # Servo 29
+                [76,534,0,76,534,'Servo 30'],                      # Servo 30
+                [76,534,0,76,534,'Servo 31'],                      # Servo 31
+                [76,534,0,76,534,'Servo 32'],                      # Servo 32
+                [76,534,0,76,534,'Servo 33'],                      # Servo 33
+                [76,534,0,76,534,'Servo 34'],                      # Servo 34
+                [76,534,0,76,534,'Servo 35'],                      # Servo 35
+                [76,534,0,76,534,'Servo 36'],                      # Servo 36
+                [76,534,0,76,534,'Servo 37'],                      # Servo 37
+                [76,534,0,76,534,'Servo 38'],                      # Servo 38
+                [76,534,0,76,534,'Servo 39'],                      # Servo 39
+                [76,534,2,76,534,'RL1,RL2,RL3'],                   # Servo 40
+                [76,534,0,76,534,'Servo 41'],                      # Servo 41
+                [76,534,0,76,534,'Servo 42'],                      # Servo 42
+                [76,534,0,76,534,'Servo 43'],                      # Servo 43
+                [76,534,0,76,534,'Servo 44'],                      # Servo 44
+                [76,534,0,76,534,'Servo 45'],                      # Servo 45
+                [76,534,0,76,534,'Servo 46'],                      # Servo 46
+                [76,534,0,76,534,'Servo 47'],                      # Servo 47
+                [76,534,0,76,534,'Servo 48'],                      # Servo 48
+                [76,534,0,76,534,'Servo 49'],                      # Servo 49
+                [76,534,0,76,534,'Servo 50'],                      # Servo 50
+                [76,534,0,76,534,'Servo 51'],                      # Servo 51
+                [76,534,0,76,534,'Servo 52'],                      # Servo 52
+                [76,534,0,76,534,'Servo 53'],                      # Servo 53
+                [76,534,0,76,534,'Servo 54'],                      # Servo 54
+                [76,534,0,76,534,'Servo 55'],                      # Servo 55
+                [76,534,0,76,534,'Servo 56'],                      # Servo 56
+                [76,534,0,76,534,'Servo 57'],                      # Servo 57
+                [76,534,0,76,534,'Servo 58'],                      # Servo 58
+                [76,534,0,76,534,'Servo 59'],                      # Servo 59
+                [76,534,0,76,534,'Servo 60'],                      # Servo 60
+                [76,534,0,76,534,'Servo 61'],                      # Servo 61
+                [76,534,0,76,534,'Servo 62'],                      # Servo 62
+                [76,534,0,76,534,'Servo 63'],                      # Servo 63
+                [76,534,0,76,534,'Servo 64'],                      # Servo 64
+                [76,534,0,76,534,'Servo 65'],                      # Servo 65
+                [76,534,0,76,534,'Servo 66'],                      # Servo 66
+                [76,534,0,76,534,'Servo 67'],                      # Servo 67
+                [76,534,0,76,534,'Servo 68'],                      # Servo 68
+                [76,534,0,76,534,'Servo 69'],                      # Servo 69
+                [76,534,0,76,534,'Servo 70'],                      # Servo 70
+                [76,534,0,76,534,'Servo 71'],                      # Servo 71
+                [76,534,0,76,534,'Servo 72'],                      # Servo 72
+                [76,534,0,76,534,'Servo 73'],                      # Servo 73
+                [76,534,0,76,534,'Servo 74'],                      # Servo 74
+                [76,534,0,76,534,'Servo 75'],                      # Servo 75
+                [76,534,0,76,534,'Servo 76'],                      # Servo 76
+                [76,534,0,76,534,'Servo 77'],                      # Servo 77
+                [76,534,0,76,534,'Servo 78'],                      # Servo 78
+                [76,534,0,76,534,'Servo 79'],                      # Servo 79
+                [76,534,0,76,534,'Servo 80'],                      # Servo 80
+                [76,534,0,76,534,'Servo 81'],                      # Servo 81
+                [76,534,0,76,534,'Servo 82'],                      # Servo 82
+                [76,534,0,76,534,'Servo 83'],                      # Servo 83
+                [76,534,0,76,534,'Servo 84'],                      # Servo 84
+                [76,534,0,76,534,'Servo 85'],                      # Servo 85
+                [76,534,0,76,534,'Servo 86'],                      # Servo 86
+                [76,534,0,76,534,'Servo 87'],                      # Servo 87
+                [76,534,0,76,534,'Servo 88'],                      # Servo 88
+                [76,534,0,76,534,'Servo 89'],                      # Servo 89
+                [76,534,0,76,534,'Servo 90'],                      # Servo 90
+                [76,534,0,76,534,'Servo 91'],                      # Servo 91
+                [76,534,0,76,534,'Servo 92'],                      # Servo 92
+                [76,534,0,76,534,'Servo 93'],                      # Servo 93
+                [76,534,0,76,534,'Servo 94'],                      # Servo 94
+                [76,534,0,76,534,'Servo 95'],                      # Servo 95
+                [76,534,0,76,534,'Servo 96'],                      # Servo 96
+                [76,534,0,76,534,'Servo 97'],                      # Servo 97
+                [76,534,0,76,534,'Servo 98'],                      # Servo 98
+                [76,534,0,76,534,'Servo 99'],                      # Servo 99
+                [0,4095,0,0,4095,'Servo 100'],                      # Servo 100
+                [76,534,0,76,534,'Servo 101'],                      # Servo 101
+                [76,534,0,76,534,'Servo 102'],                      # Servo 102
+                [76,534,0,76,534,'Servo 103'],                      # Servo 103
+                [76,534,0,76,534,'Servo 104'],                      # Servo 104
+                [76,534,0,76,534,'Servo 105'],                      # Servo 105
+                [76,534,0,76,534,'Servo 106'],                      # Servo 106
+                [76,534,0,76,534,'Servo 107'],                      # Servo 107
+                [76,534,0,76,534,'Servo 108'],                      # Servo 108
+                [76,534,0,76,534,'Servo 109'],                      # Servo 109
+                [76,534,0,76,534,'Servo 110'],                      # Servo 110
+                [76,534,0,76,534,'Servo 111'],                      # Servo 111
+                [76,534,0,76,534,'Servo 112'],                      # Servo 112
+                [76,534,0,76,534,'Servo 113'],                      # Servo 113
+                [76,534,0,76,534,'Servo 114'],                      # Servo 114
+                [76,534,0,76,534,'Servo 115'],                      # Servo 115
+                [76,534,0,76,534,'Servo 116'],                      # Servo 116
+                [76,534,0,76,534,'Servo 117'],                      # Servo 117
+                [76,534,0,76,534,'Servo 118'],                      # Servo 118
+                [76,534,0,76,534,'Servo 119'],                      # Servo 119
+                [76,534,0,76,534,'Servo 120'],                      # Servo 120
+                [76,534,0,76,534,'Servo 121'],                      # Servo 121
+                [76,534,0,76,534,'Servo 122'],                      # Servo 122
+                [76,534,0,76,534,'Servo 123'],                      # Servo 123
+                [76,534,0,76,534,'Servo 124'],                      # Servo 124
+                [76,534,0,76,534,'Servo 125'],                      # Servo 125
+                [76,534,0,76,534,'Servo 126'],                      # Servo 126
+                [76,534,0,76,534,'Servo 127'],                      # Servo 127
+                [76,534,0,76,534,'Servo 128'],                      # Servo 128
+                [76,534,0,76,534,'Servo 129'],                      # Servo 129
+                [76,534,0,76,534,'Servo 130'],                      # Servo 130
+                [76,534,0,76,534,'Servo 131'],                      # Servo 131
+                [76,534,0,76,534,'Servo 132'],                      # Servo 132
+                [76,534,0,76,534,'Servo 133'],                      # Servo 133
+                [76,534,0,76,534,'Servo 134'],                      # Servo 134
+                [76,534,0,76,534,'Servo 135'],                      # Servo 135
+                [76,534,0,76,534,'Servo 136'],                      # Servo 136
+                [76,534,0,76,534,'Servo 137'],                      # Servo 137
+                [76,534,0,76,534,'Servo 138'],                      # Servo 138
+                [76,534,0,76,534,'Servo 139'],                      # Servo 139
+                [76,534,0,76,534,'Servo 140'],                     #Servo 140
+                [76,534,0,76,534,'Servo 141'],                     #Servo 141
+                [76,534,0,76,534,'Servo 142'],                     #Servo 142
+                [76,534,0,76,534,'Servo 143'],                     #Servo 143
+                [76,534,0,76,534,'Servo 144'],                     #Servo 144
+                [76,534,0,76,534,'Servo 145'],                     #Servo 145
+                [76,534,0,76,534,'Servo 146'],                     #Servo 146
+                [76,534,0,76,534,'Servo 147'],                     #Servo 147
+                [76,534,0,76,534,'Servo 148'],                     #Servo 148
+                [76,534,0,76,534,'Servo 149'],                     #Servo 149
+                [76,534,0,76,534,'Servo 150'],                     #Servo 150
+                [76,534,0,76,534,'Servo 151'],                     #Servo 151
+                [76,534,0,76,534,'Servo 152'],                     #Servo 152
+                [76,534,0,76,534,'Servo 153'],                     #Servo 153
+                [76,534,0,76,534,'Servo 154'],                     #Servo 154
+                [76,534,0,76,534,'Servo 155'],                     #Servo 155
+                [76,534,0,76,534,'Servo 156'],                     #Servo 156
+                [76,534,0,76,534,'Servo 157'],                     #Servo 157
+                [76,534,0,76,534,'Servo 158'],                     #Servo 158
+                [76,534,0,76,534,'Servo 159'],                     #Servo 159
+                [76,534,0,76,534,'Servo 160'],                     #Servo 160
+                [76,534,0,76,534,'Servo 161'],                     #Servo 161
+                [76,534,0,76,534,'Servo 162'],                     #Servo 162
+                [76,534,0,76,534,'Servo 163'],                     #Servo 163
+                [76,534,0,76,534,'Servo 164'],                     #Servo 164
+                [76,534,0,76,534,'Servo 165'],                     #Servo 165
+                [76,534,0,76,534,'Servo 166'],                     #Servo 166
+                [76,534,0,76,534,'Servo 167'],                     #Servo 167
+                [76,534,0,76,534,'Servo 168'],                     #Servo 168
+                [76,534,0,76,534,'Servo 169'],                     #Servo 169
+                [76,534,0,76,534,'Servo 170'],                     #Servo 170
+                [76,534,0,76,534,'Servo 171'],                     #Servo 171
+                [76,534,0,76,534,'Servo 172'],                     #Servo 172
+                [76,534,0,76,534,'Servo 173'],                     #Servo 173
+                [76,534,0,76,534,'Servo 174'],                     #Servo 174
+                [76,534,0,76,534,'Servo 175'],                     #Servo 175
+                [76,534,0,76,534,'Servo 176'],                     #Servo 176
+                [76,534,0,76,534,'Servo 177'],                     #Servo 177
+                [76,534,0,76,534,'Servo 178'],                     #Servo 178
+                [76,534,0,76,534,'Servo 179'],                     #Servo 179
+                [76,534,0,76,534,'Servo 180'],                     #Servo 180
+                [76,534,0,76,534,'Servo 181'],                     #Servo 181
+                [76,534,0,76,534,'Servo 182'],                     #Servo 182
+                [76,534,0,76,534,'Servo 183'],                     #Servo 183
+                [76,534,0,76,534,'Servo 184'],                     #Servo 184
+                [76,534,0,76,534,'Servo 185'],                     #Servo 185
+                [76,534,0,76,534,'Servo 186'],                     #Servo 186
+                [76,534,0,76,534,'Servo 187'],                     #Servo 187
+                [76,534,0,76,534,'Servo 188'],                     #Servo 188
+                [76,534,0,76,534,'Servo 189'],                     #Servo 189
+                [76,534,0,76,534,'Servo 190'],                     #Servo 190
+                [76,534,0,76,534,'Servo 191'],                     #Servo 191
+                [76,534,0,76,534,'Servo 192'],                     #Servo 192
+                [76,534,0,76,534,'Servo 193'],                     #Servo 193
+                [76,534,0,76,534,'Servo 194'],                     #Servo 194		
+                [76,534,0,76,534,'Servo 195'],                     #Servo 195
+                [76,534,0,76,534,'Servo 196'],                     #Servo 196
+                [76,534,0,76,534,'Servo 197'],                     #Servo 197
+                [76,534,0,76,534,'Servo 198'],                     #Servo 198
+                [76,534,0,76,534,'Servo 199'],                     #Servo 199
+                [76,534,0,76,534,'Servo 200'],                     #Servo 200
+                [76,534,0,76,534,'Servo 201'],                     #Servo 201
+                [76,534,0,76,534,'Servo 202'],                     #Servo 202
+                [76,534,0,76,534,'Servo 203'],                     #Servo 203
+                [76,534,0,76,534,'Servo 204'],                     #Servo 204
+                [76,534,0,76,534,'Servo 205'],                     #Servo 205
+                [76,534,0,76,534,'Servo 206'],                     #Servo 206
+                [76,534,0,76,534,'Servo 207'],                     #Servo 207
+                [76,534,0,76,534,'Servo 208'],                     #Servo 208
+                [76,534,0,76,534,'Servo 209'],                     #Servo 209
+                [76,534,0,76,534,'Servo 210'],                     #Servo 210
+                [76,534,0,76,534,'Servo 211'],                     #Servo 211
+                [76,534,0,76,534,'Servo 212'],                     #Servo 212
+                [76,534,0,76,534,'Servo 213'],                     #Servo 213
+                [76,534,0,76,534,'Servo 214'],                     #Servo 214
+                [76,534,0,76,534,'Servo 215'],                     #Servo 215
+                [76,534,0,76,534,'Servo 216'],                     #Servo 216
+                [76,534,0,76,534,'Servo 217'],                     #Servo 217
+                [76,534,0,76,534,'Servo 218'],                     #Servo 218
+                [76,534,0,76,534,'Servo 219'],                     #Servo 219
+                [76,534,0,76,534,'Servo 220'],                     #Servo 220
+                [76,534,0,76,534,'Servo 221'],                     #Servo 221
+                [76,534,0,76,534,'Servo 222'],                     #Servo 222
+                [76,534,0,76,534,'Servo 223'],                     #Servo 223
+                [76,534,0,76,534,'Servo 224'],                     #Servo 224
+                [76,534,0,76,534,'Servo 225'],                     #Servo 225
+                [76,534,0,76,534,'Servo 226'],                     #Servo 226
+                [76,534,0,76,534,'Servo 227'],                     #Servo 227
+                [76,534,0,76,534,'Servo 228'],                     #Servo 228
+                [76,534,0,76,534,'Servo 229'],                     #Servo 229
+                [76,534,0,76,534,'Servo 230'],                     #Servo 230
+                [76,534,0,76,534,'Servo 231'],                     #Servo 231
+                [76,534,0,76,534,'Servo 232'],                     #Servo 232
+                [76,534,0,76,534,'Servo 233'],                     #Servo 233
+                [76,534,0,76,534,'Servo 234'],                     #Servo 234
+                [76,534,0,76,534,'Servo 235'],                     #Servo 235
+                [76,534,0,76,534,'Servo 236'],                     #Servo 236
+                [76,534,0,76,534,'Servo 237'],                     #Servo 237
+                [76,534,0,76,534,'Servo 238'],                     #Servo 238
+                [76,534,0,76,534,'Servo 239'],                     #Servo 239
+                [76,534,0,76,534,'Servo 240'],                     #Servo 240
+                [76,534,0,76,534,'Servo 241'],                     #Servo 241
+                [76,534,0,76,534,'Servo 242'],                     #Servo 242
+                [76,534,0,76,534,'Servo 243'],                     #Servo 243
+                [76,534,0,76,534,'Servo 244'],                     #Servo 244
+                [76,534,0,76,534,'Servo 245'],                     #Servo 245
+                [76,534,0,76,534,'Servo 246'],                     #Servo 246
+                [76,534,0,76,534,'Servo 247'],                     #Servo 247
+                [76,534,0,76,534,'Servo 248'],                     #Servo 248
+                [76,534,0,76,534,'Servo 249'],                     #Servo 249
+                [76,534,0,76,534,'Servo 250'],                     #Servo 250
+                [76,534,0,76,534,'Servo 251'],                     #Servo 251
+                [76,534,0,76,534,'Servo 252'],                     #Servo 252
+                [76,534,0,76,534,'Servo 253'],                     #Servo 253
+                [76,534,0,76,534,'Servo 254'],                     #Servo 254
+                [76,534,0,76,534,'Servo 255'],                     #Servo 255
+                [76,534,0,76,534,'Servo 256'],                     #Servo 256
+                [76,534,0,76,534,'Servo 257'],                     #Servo 257
+                [76,534,0,76,534,'Servo 258'],                     #Servo 258
+                [76,534,0,76,534,'Servo 259'],                     #Servo 259		
+                [76,534,0,76,534,'Servo 260'],                     #Servo 260
+                [76,534,0,76,534,'Servo 261'],                     #Servo 261
+                [76,534,0,76,534,'Servo 262'],                     #Servo 262
+                [76,534,0,76,534,'Servo 263'],                     #Servo 263
+                [76,534,0,76,534,'Servo 264'],                     #Servo 264
+                [76,534,0,76,534,'Servo 265'],                     #Servo 265
+                [76,534,0,76,534,'Servo 266'],                     #Servo 266
+                [76,534,0,76,534,'Servo 267'],                     #Servo 267
+                [76,534,0,76,534,'Servo 268'],                     #Servo 268
+                [76,534,0,76,534,'Servo 269'],                     #Servo 269
+                [76,534,0,76,534,'Servo 270'],                     #Servo 270
+                [76,534,0,76,534,'Servo 271'],                     #Servo 271
+                [76,534,0,76,534,'Servo 272'],                     #Servo 272
+                [76,534,0,76,534,'Servo 273'],                     #Servo 273
+                [76,534,0,76,534,'Servo 274'],                     #Servo 274
+                [76,534,0,76,534,'Servo 275'],                     #Servo 275
+                [76,534,0,76,534,'Servo 276'],                     #Servo 276
+                [76,534,0,76,534,'Servo 277'],                     #Servo 277
+                [76,534,0,76,534,'Servo 278'],                     #Servo 278
+                [76,534,0,76,534,'Servo 279'],                     #Servo 279
+                [76,534,0,76,534,'Servo 280'],                     #Servo 280
+                [76,534,0,76,534,'Servo 281'],                     #Servo 281
+                [76,534,0,76,534,'Servo 282'],                     #Servo 282
+                [76,534,0,76,534,'Servo 283'],                     #Servo 283
+                [76,534,0,76,534,'Servo 284'],                     #Servo 284
+                [76,534,0,76,534,'Servo 285'],                     #Servo 285
+                [76,534,0,76,534,'Servo 286'],                     #Servo 286
+                [76,534,0,76,534,'Servo 287'],                     #Servo 287
+                [76,534,0,76,534,'Servo 288'],                     #Servo 288
+                [76,534,0,76,534,'Servo 289'],                     #Servo 289
+                [76,534,0,76,534,'Servo 290'],                     #Servo 290
+                [76,534,0,76,534,'Servo 291'],                     #Servo 291
+                [76,534,0,76,534,'Servo 292'],                     #Servo 292
+                [76,534,0,76,534,'Servo 293'],                     #Servo 293
+                [76,534,0,76,534,'Servo 294'],                     #Servo 294
+                [76,534,0,76,534,'Servo 295'],                     #Servo 295
+                [76,534,0,76,534,'Servo 296'],                     #Servo 296
+                [76,534,0,76,534,'Servo 297'],                     #Servo 297
+                [76,534,0,76,534,'Servo 298'],                     #Servo 298
+                [76,534,0,76,534,'Servo 299'],                     #Servo 299
+                [76,534,0,76,534,'Servo 300'],                     #Servo 300
+                [76,534,0,76,534,'Servo 301'],                     #Servo 301
+                [76,534,0,76,534,'Servo 302'],                     #Servo 302
+                [76,534,0,76,534,'Servo 303'],                     #Servo 303
+                [76,534,0,76,534,'Servo 304'],                     #Servo 304
+                [76,534,0,76,534,'Servo 305'],                     #Servo 305
+                [76,534,0,76,534,'Servo 306'],                     #Servo 306
+                [76,534,0,76,534,'Servo 307'],                     #Servo 307
+                [76,534,0,76,534,'Servo 308'],                     #Servo 308
+                [76,534,0,76,534,'Servo 309'],                     #Servo 309
+                [76,534,0,76,534,'Servo 310'],                     #Servo 310
+                [76,534,0,76,534,'Servo 311'],                     #Servo 311
+                [76,534,0,76,534,'Servo 312'],                     #Servo 312
+                [76,534,0,76,534,'Servo 313'],                     #Servo 313
+                [76,534,0,76,534,'Servo 314'],                     #Servo 314
+                [76,534,0,76,534,'Servo 315'],                     #Servo 315
+                [76,534,0,76,534,'Servo 316'],                     #Servo 316
+                [76,534,0,76,534,'Servo 317'],                     #Servo 317
+                [76,534,0,76,534,'Servo 318'],                     #Servo 318
+                [76,534,0,76,534,'Servo 319'],                     #Servo 319
+                [76,534,0,76,534,'Servo 320'],                     #Servo 320
+                [76,534,0,76,534,'Servo 321'],                     #Servo 321
+                [76,534,0,76,534,'Servo 322'],                     #Servo 322
+                [76,534,0,76,534,'Servo 323'],                     #Servo 323
+                [76,534,0,76,534,'Servo 324'],                     #Servo 324
+                [76,534,0,76,534,'Servo 325'],                     #Servo 325
+                [76,534,0,76,534,'Servo 326'],                     #Servo 326
+                [76,534,0,76,534,'Servo 327'],                     #Servo 327
+                [76,534,0,76,534,'Servo 328'],                     #Servo 328
+                [76,534,0,76,534,'Servo 329'],                     #Servo 329
+                [76,534,0,76,534,'Servo 330'],                     #Servo 330
+                [76,534,0,76,534,'Servo 331'],                     #Servo 331
+                [76,534,0,76,534,'Servo 332'],                     #Servo 332
+                [76,534,0,76,534,'Servo 333'],                     #Servo 333
+                [76,534,0,76,534,'Servo 334'],                     #Servo 334
+                [76,534,0,76,534,'Servo 335'],                     #Servo 335
+                [76,534,0,76,534,'Servo 336'],                     #Servo 336
+                [76,534,0,76,534,'Servo 337'],                     #Servo 337
+                [76,534,0,76,534,'Servo 338'],                     #Servo 338
+                [76,534,0,76,534,'Servo 339'],                     #Servo 339
+                [76,534,0,76,534,'Servo 340'],                     #Servo 340
+                [76,534,0,76,534,'Servo 341'],                     #Servo 341
+                [76,534,0,76,534,'Servo 342'],                     #Servo 342
+                [76,534,0,76,534,'Servo 343'],                     #Servo 343
+                [76,534,0,76,534,'Servo 344'],                     #Servo 344
+                [76,534,0,76,534,'Servo 345'],                     #Servo 345
+                [76,534,0,76,534,'Servo 346'],                     #Servo 346
+                [76,534,0,76,534,'Servo 347'],                     #Servo 347
+                [76,534,0,76,534,'Servo 348'],                     #Servo 348
+                [76,534,0,76,534,'Servo 349'],                     #Servo 349
+                [76,534,0,76,534,'Servo 350'],                     #Servo 350
+                [76,534,0,76,534,'Servo 351'],                     #Servo 351
+                [76,534,0,76,534,'Servo 352'],                     #Servo 352
+                [76,534,0,76,534,'Servo 353'],                     #Servo 353
+                [76,534,0,76,534,'Servo 354'],                     #Servo 354
+                [76,534,0,76,534,'Servo 355'],                     #Servo 355
+                [76,534,0,76,534,'Servo 356'],                     #Servo 356
+                [76,534,0,76,534,'Servo 357'],                     #Servo 357
+                [76,534,0,76,534,'Servo 358'],                     #Servo 358
+                [76,534,0,76,534,'Servo 359'],                     #Servo 359
+                [76,534,0,76,534,'Servo 360'],                     #Servo 360
+                [76,534,0,76,534,'Servo 361'],                     #Servo 361
+                [76,534,0,76,534,'Servo 362'],                     #Servo 362
+                [76,534,0,76,534,'Servo 363'],                     #Servo 363
+                [76,534,0,76,534,'Servo 364'],                     #Servo 364
+                [76,534,0,76,534,'Servo 365'],                     #Servo 365
+                [76,534,0,76,534,'Servo 366'],                     #Servo 366
+                [76,534,0,76,534,'Servo 367'],                     #Servo 367
+                [76,534,0,76,534,'Servo 368'],                     #Servo 368
+                [76,534,0,76,534,'Servo 369'],                     #Servo 369
+                [76,534,0,76,534,'Servo 370'],                     #Servo 370
+                [76,534,0,76,534,'Servo 371'],                     #Servo 371
+                [76,534,0,76,534,'Servo 372'],                     #Servo 372
+                [76,534,0,76,534,'Servo 373'],                     #Servo 373
+                [76,534,0,76,534,'Servo 374'],                     #Servo 374
+                [76,534,0,76,534,'Servo 375'],                     #Servo 375
+                [76,534,0,76,534,'Servo 376'],                     #Servo 376
+                [76,534,0,76,534,'Servo 377'],                     #Servo 377
+                [76,534,0,76,534,'Servo 378'],                     #Servo 378
+                [76,534,0,76,534,'Servo 379'],                     #Servo 379
+                [76,534,0,76,534,'Servo 380'],                     #Servo 380
+                [76,534,0,76,534,'Servo 381'],                     #Servo 381
+                [76,534,0,76,534,'Servo 382'],                     #Servo 382
+                [76,534,0,76,534,'Servo 383'],                     #Servo 383
+                [76,534,0,76,534,'Servo 384'],                     #Servo 384
+                [76,534,0,76,534,'Servo 385'],                     #Servo 385
+                [76,534,0,76,534,'Servo 386'],                     #Servo 386
+                [76,534,0,76,534,'Servo 387'],                     #Servo 387
+                [76,534,0,76,534,'Servo 388'],                     #Servo 388
+                [76,534,0,76,534,'Servo 389'],                     #Servo 389
+                [76,534,0,76,534,'Servo 390'],                     #Servo 390
+                [76,534,0,76,534,'Servo 391'],                     #Servo 391
+                [76,534,0,76,534,'Servo 392'],                     #Servo 392
+                [76,534,0,76,534,'Servo 393'],                     #Servo 393
+                [76,534,0,76,534,'Servo 394'],                     #Servo 394
+                [76,534,0,76,534,'Servo 395'],                     #Servo 395
+                [76,534,0,76,534,'Servo 396'],                     #Servo 396
+                [76,534,0,76,534,'Servo 397'],                     #Servo 397
+                [76,534,0,76,534,'Servo 398'],                     #Servo 398
+                [76,534,0,76,534,'Servo 399'],                     #Servo 399
+                [76,534,0,76,534,'Servo 400'],                     #Servo 400
+                [76,534,0,76,534,'Servo 401'],                     #Servo 401
+                [76,534,0,76,534,'Servo 402'],                     #Servo 402
+                [76,534,0,76,534,'Servo 403'],                     #Servo 403
+                [76,534,0,76,534,'Servo 404'],                     #Servo 404
+                [76,534,0,76,534,'Servo 405'],                     #Servo 405
+                [76,534,0,76,534,'Servo 406'],                     #Servo 406
+                [76,534,0,76,534,'Servo 407'],                     #Servo 407
+                [76,534,0,76,534,'Servo 408'],                     #Servo 408
+                [76,534,0,76,534,'Servo 409'],                     #Servo 409
+                [76,534,0,76,534,'Servo 410'],                     #Servo 410
+                [76,534,0,76,534,'Servo 411'],                     #Servo 411
+                [76,534,0,76,534,'Servo 412'],                     #Servo 412
+                [76,534,0,76,534,'Servo 413'],                     #Servo 413
+                [76,534,0,76,534,'Servo 414'],                     #Servo 414
+                [76,534,0,76,534,'Servo 415'],                     #Servo 415
+                [76,534,0,76,534,'Servo 416'],                     #Servo 416
+                [76,534,0,76,534,'Servo 417'],                     #Servo 417
+                [76,534,0,76,534,'Servo 418'],                     #Servo 418
+                [76,534,0,76,534,'Servo 419'],                     #Servo 419
+                [76,534,0,76,534,'Servo 420'],                     #Servo 420
+                [76,534,0,76,534,'Servo 421'],                     #Servo 421
+                [76,534,0,76,534,'Servo 422'],                     #Servo 422
+                [76,534,0,76,534,'Servo 423'],                     #Servo 423
+                [76,534,0,76,534,'Servo 424'],                     #Servo 424
+                [76,534,0,76,534,'Servo 425'],                     #Servo 425
+                [76,534,0,76,534,'Servo 426'],                     #Servo 426
+                [76,534,0,76,534,'Servo 427'],                     #Servo 427
+                [76,534,0,76,534,'Servo 428'],                     #Servo 428
+                [76,534,0,76,534,'Servo 429'],                     #Servo 429
+                [76,534,0,76,534,'Servo 430'],                     #Servo 430
+                [76,534,0,76,534,'Servo 431'],                     #Servo 431
+                [76,534,0,76,534,'Servo 432'],                     #Servo 432
+                [76,534,0,76,534,'Servo 433'],                     #Servo 433
+                [76,534,0,76,534,'Servo 434'],                     #Servo 434
+                [76,534,0,76,534,'Servo 435'],                     #Servo 435
+                [76,534,0,76,534,'Servo 436'],                     #Servo 436
+                [76,534,0,76,534,'Servo 437'],                     #Servo 437
+                [76,534,0,76,534,'Servo 438'],                     #Servo 438
+                [76,534,0,76,534,'Servo 439'],                     #Servo 439
+                [76,534,0,76,534,'Servo 440'],                     #Servo 440
+                [76,534,0,76,534,'Servo 441'],                     #Servo 441
+                [76,534,0,76,534,'Servo 442'],                     #Servo 442
+                [76,534,0,76,534,'Servo 443'],                     #Servo 443
+                [76,534,0,76,534,'Servo 444'],                     #Servo 444
+                [76,534,0,76,534,'Servo 445'],                     #Servo 445
+                [76,534,0,76,534,'Servo 446'],                     #Servo 446
+                [76,534,0,76,534,'Servo 447'],                     #Servo 447
+                [76,534,0,76,534,'Servo 448'],                     #Servo 448
+                [76,534,0,76,534,'Servo 449'],                     #Servo 449
+                [76,534,0,76,534,'Servo 450'],                     #Servo 450
+                [76,534,0,76,534,'Servo 451'],                     #Servo 451
+                [76,534,0,76,534,'Servo 452'],                     #Servo 452
+                [76,534,0,76,534,'Servo 453'],                     #Servo 453
+                [76,534,0,76,534,'Servo 454'],                     #Servo 454
+                [76,534,0,76,534,'Servo 455'],                     #Servo 455
+                [76,534,0,76,534,'Servo 456'],                     #Servo 456
+                [76,534,0,76,534,'Servo 457'],                     #Servo 457
+                [76,534,0,76,534,'Servo 458'],                     #Servo 458
+                [76,534,0,76,534,'Servo 459'],                     #Servo 459
+                [76,534,0,76,534,'Servo 460'],                     #Servo 460
+                [76,534,0,76,534,'Servo 461'],                     #Servo 461
+                [76,534,0,76,534,'Servo 462'],                     #Servo 462
+                [76,534,0,76,534,'Servo 463'],                     #Servo 463
+                [76,534,0,76,534,'Servo 464'],                     #Servo 464
+                [76,534,0,76,534,'Servo 465'],                     #Servo 465
+                [76,534,0,76,534,'Servo 466'],                     #Servo 466
+                [76,534,0,76,534,'Servo 467'],                     #Servo 467
+                [76,534,0,76,534,'Servo 468'],                     #Servo 468
+                [76,534,0,76,534,'Servo 469'],                     #Servo 469
+                [76,534,0,76,534,'Servo 470'],                     #Servo 470
+                [76,534,0,76,534,'Servo 471'],                     #Servo 471
+                [76,534,0,76,534,'Servo 472'],                     #Servo 472
+                [76,534,0,76,534,'Servo 473'],                     #Servo 473
+                [76,534,0,76,534,'Servo 474'],                     #Servo 474
+                [76,534,0,76,534,'Servo 475'],                     #Servo 475
+                [76,534,0,76,534,'Servo 476'],                     #Servo 476
+                [76,534,0,76,534,'Servo 477'],                     #Servo 477
+                [76,534,0,76,534,'Servo 478'],                     #Servo 478
+                [76,534,0,76,534,'Servo 479'],                     #Servo 479
+                [76,534,0,76,534,'Servo 480'],                     #Servo 480
+                [76,534,0,76,534,'Servo 481'],                     #Servo 481
+                [76,534,0,76,534,'Servo 482'],                     #Servo 482
+                [76,534,0,76,534,'Servo 483'],                     #Servo 483
+                [76,534,0,76,534,'Servo 484'],                     #Servo 484
+                [76,534,0,76,534,'Servo 485'],                     #Servo 485
+                [76,534,0,76,534,'Servo 486'],                     #Servo 486
+                [76,534,0,76,534,'Servo 487'],                     #Servo 487
+                [76,534,0,76,534,'Servo 488'],                     #Servo 488
+                [76,534,0,76,534,'Servo 489'],                     #Servo 489
+                [76,534,0,76,534,'Servo 490'],                     #Servo 490
+                [76,534,0,76,534,'Servo 491'],                     #Servo 491
+                [76,534,0,76,534,'Servo 492'],                     #Servo 492
+                [76,534,0,76,534,'Servo 493'],                     #Servo 493
+                [76,534,0,76,534,'Servo 494'],                     #Servo 494
+                [76,534,0,76,534,'Servo 495'],                     #Servo 495
+                [76,534,0,76,534,'Servo 496'],                     #Servo 496
+                [76,534,0,76,534,'Servo 497'],                     #Servo 497
+                [76,534,0,76,534,'Servo 498'],                     #Servo 498
+                [76,534,0,76,534,'Servo 499'],                     #Servo 499
+                [76,534,0,76,534,'Servo 500'],                     #Servo 500
+                [76,534,0,76,534,'Servo 501'],                     #Servo 501
+                [76,534,0,76,534,'Servo 502'],                     #Servo 502
+                [76,534,0,76,534,'Servo 503'],                     #Servo 503
+                [76,534,0,76,534,'Servo 504'],                     #Servo 504
+                [76,534,0,76,534,'Servo 505'],                     #Servo 505
+                [76,534,0,76,534,'Servo 506'],                     #Servo 506
+                [76,534,0,76,534,'Servo 507'],                     #Servo 507
+                [76,534,0,76,534,'Servo 508'],                     #Servo 508
+                [76,534,0,76,534,'Servo 509'],                     #Servo 509
+                [76,534,0,76,534,'Servo 510'],                     #Servo 510
+                [76,534,0,76,534,'Servo 511'],                     #Servo 511
+                [76,534,0,76,534,'Servo 512'],                     #Servo 512
+                [76,534,0,76,534,'Servo 513'],                     #Servo 513
+                [76,534,0,76,534,'Servo 514'],                     #Servo 514
+                [76,534,0,76,534,'Servo 515'],                     #Servo 515
+                [76,534,0,76,534,'Servo 516'],                     #Servo 516
+                [76,534,0,76,534,'Servo 517'],                     #Servo 517
+                [76,534,0,76,534,'Servo 518'],                     #Servo 518
+                [76,534,0,76,534,'Servo 519'],                     #Servo 519
+                [76,534,0,76,534,'Servo 520'],                     #Servo 520
+                [76,534,0,76,534,'Servo 521'],                     #Servo 521
+                [76,534,0,76,534,'Servo 522'],                     #Servo 522
+                [76,534,0,76,534,'Servo 523'],                     #Servo 523
+                [76,534,0,76,534,'Servo 524'],                     #Servo 524
+                [76,534,0,76,534,'Servo 525'],                     #Servo 525
+                [76,534,0,76,534,'Servo 526'],                     #Servo 526
+                [76,534,0,76,534,'Servo 527'],                     #Servo 527
+                [76,534,0,76,534,'Servo 528'],                     #Servo 528
+                [76,534,0,76,534,'Servo 529'],                     #Servo 529
+                [76,534,0,76,534,'Servo 530'],                     #Servo 530
+                [76,534,0,76,534,'Servo 531'],                     #Servo 531
+                [76,534,0,76,534,'Servo 532'],                     #Servo 532
+                [76,534,0,76,534,'Servo 533'],                     #Servo 533
+                [76,534,0,76,534,'Servo 534'],                     #Servo 534
+                [76,534,0,76,534,'Servo 535'],                     #Servo 535
+                [76,534,0,76,534,'Servo 536'],                     #Servo 536
+                [76,534,0,76,534,'Servo 537'],                     #Servo 537
+                [76,534,0,76,534,'Servo 538'],                     #Servo 538
+                [76,534,0,76,534,'Servo 539'],                     #Servo 539
+                [76,534,0,76,534,'Servo 540'],                     #Servo 540
+                [76,534,0,76,534,'Servo 541'],                     #Servo 541
+                [76,534,0,76,534,'Servo 542'],                     #Servo 542
+                [76,534,0,76,534,'Servo 543'],                     #Servo 543
+                [76,534,0,76,534,'Servo 544'],                     #Servo 544
+                [76,534,0,76,534,'Servo 545'],                     #Servo 545
+                [76,534,0,76,534,'Servo 546'],                     #Servo 546
+                [76,534,0,76,534,'Servo 547'],                     #Servo 547
+                [76,534,0,76,534,'Servo 548'],                     #Servo 548
+                [76,534,0,76,534,'Servo 549'],                     #Servo 549
+                [76,534,0,76,534,'Servo 550'],                     #Servo 550
+                [76,534,0,76,534,'Servo 551'],                     #Servo 551
+                [76,534,0,76,534,'Servo 552'],                     #Servo 552
+                [76,534,0,76,534,'Servo 553'],                     #Servo 553
+                [76,534,0,76,534,'Servo 554'],                     #Servo 554
+                [76,534,0,76,534,'Servo 555'],                     #Servo 555
+                [76,534,0,76,534,'Servo 556'],                     #Servo 556
+                [76,534,0,76,534,'Servo 557'],                     #Servo 557
+                [76,534,0,76,534,'Servo 558'],                     #Servo 558
+                [76,534,0,76,534,'Servo 559'],                     #Servo 559
+                [76,534,0,76,534,'Servo 560'],                     #Servo 560
+                [76,534,0,76,534,'Servo 561'],                     #Servo 561
+                [76,534,0,76,534,'Servo 562'],                     #Servo 562
+                [76,534,0,76,534,'Servo 563'],                     #Servo 563
+                [76,534,0,76,534,'Servo 564'],                     #Servo 564
+                [76,534,0,76,534,'Servo 565'],                     #Servo 565
+                [76,534,0,76,534,'Servo 566'],                     #Servo 566
+                [76,534,0,76,534,'Servo 567'],                     #Servo 567
+                [76,534,0,76,534,'Servo 568'],                     #Servo 568
+                [76,534,0,76,534,'Servo 569'],                     #Servo 569
+                [76,534,0,76,534,'Servo 570'],                     #Servo 570
+                [76,534,0,76,534,'Servo 571'],                     #Servo 571
+                [76,534,0,76,534,'Servo 572'],                     #Servo 572
+                [76,534,0,76,534,'Servo 573'],                     #Servo 573
+                [76,534,0,76,534,'Servo 574'],                     #Servo 574
+                [76,534,0,76,534,'Servo 575'],                     #Servo 575
+                [76,534,0,76,534,'Servo 576'],                     #Servo 576
+                [76,534,0,76,534,'Servo 577'],                     #Servo 577
+                [76,534,0,76,534,'Servo 578'],                     #Servo 578
+                [76,534,0,76,534,'Servo 579'],                     #Servo 579
+                [76,534,0,76,534,'Servo 580'],                     #Servo 580
+                [76,534,0,76,534,'Servo 581'],                     #Servo 581
+                [76,534,0,76,534,'Servo 582'],                     #Servo 582
+                [76,534,0,76,534,'Servo 583'],                     #Servo 583
+                [76,534,0,76,534,'Servo 584'],                     #Servo 584
+                [76,534,0,76,534,'Servo 585'],                     #Servo 585
+                [76,534,0,76,534,'Servo 586'],                     #Servo 586
+                [76,534,0,76,534,'Servo 587'],                     #Servo 587
+                [76,534,0,76,534,'Servo 588'],                     #Servo 588
+                [76,534,0,76,534,'Servo 589'],                     #Servo 589
+                [76,534,0,76,534,'Servo 590'],                     #Servo 590
+                [76,534,0,76,534,'Servo 591'],                     #Servo 591
+                [76,534,0,76,534,'Servo 592'],                     #Servo 592
+                [76,534,0,76,534,'Servo 593'],                     #Servo 593
+                [76,534,0,76,534,'Servo 594'],                     #Servo 594
+                [76,534,0,76,534,'Servo 595'],                     #Servo 595
+                [76,534,0,76,534,'Servo 596'],                     #Servo 596
+                [76,534,0,76,534,'Servo 597'],                     #Servo 597
+                [76,534,0,76,534,'Servo 598'],                     #Servo 598
+                [76,534,0,76,534,'Servo 599'],                     #Servo 599
+                [76,534,0,76,534,'Servo 600'],                     #Servo 600
+                [76,534,0,76,534,'Servo 601'],                     #Servo 601
+                [76,534,0,76,534,'Servo 602'],                     #Servo 602
+                [76,534,0,76,534,'Servo 603'],                     #Servo 603
+                [76,534,0,76,534,'Servo 604'],                     #Servo 604
+                [76,534,0,76,534,'Servo 605'],                     #Servo 605
+                [76,534,0,76,534,'Servo 606'],                     #Servo 606
+                [76,534,0,76,534,'Servo 607'],                     #Servo 607
+                [76,534,0,76,534,'Servo 608'],                     #Servo 608
+                [76,534,0,76,534,'Servo 609'],                     #Servo 609
+                [76,534,0,76,534,'Servo 610'],                     #Servo 610
+                [76,534,0,76,534,'Servo 611'],                     #Servo 611
+                [76,534,0,76,534,'Servo 612'],                     #Servo 612
+                [76,534,0,76,534,'Servo 613'],                     #Servo 613
+                [76,534,0,76,534,'Servo 614'],                     #Servo 614
+                [76,534,0,76,534,'Servo 615'],                     #Servo 615
+                [76,534,0,76,534,'Servo 616'],                     #Servo 616
+                [76,534,0,76,534,'Servo 617'],                     #Servo 617
+                [76,534,0,76,534,'Servo 618'],                     #Servo 618
+                [76,534,0,76,534,'Servo 619'],                     #Servo 619
+                [76,534,0,76,534,'Servo 620'],                     #Servo 620
+                [76,534,0,76,534,'Servo 621'],                     #Servo 621
+                [76,534,0,76,534,'Servo 622'],                     #Servo 622
+                [76,534,0,76,534,'Servo 623'],                     #Servo 623
+                [76,534,0,76,534,'Servo 624'],                     #Servo 624
+                [76,534,0,76,534,'Servo 625'],                     #Servo 625
+                [76,534,0,76,534,'Servo 626'],                     #Servo 626
+                [76,534,0,76,534,'Servo 627'],                     #Servo 627
+                [76,534,0,76,534,'Servo 628'],                     #Servo 628
+                [76,534,0,76,534,'Servo 629'],                     #Servo 629
+                [76,534,0,76,534,'Servo 630'],                     #Servo 630
+                [76,534,0,76,534,'Servo 631'],                     #Servo 631
+                [76,534,0,76,534,'Servo 632'],                     #Servo 632
+                [76,534,0,76,534,'Servo 633'],                     #Servo 633
+                [76,534,0,76,534,'Servo 634'],                     #Servo 634
+                [76,534,0,76,534,'Servo 635'],                     #Servo 635
+                [76,534,0,76,534,'Servo 636'],                     #Servo 636
+                [76,534,0,76,534,'Servo 637'],                     #Servo 637
+                [76,534,0,76,534,'Servo 638'],                     #Servo 638
+                [76,534,0,76,534,'Servo 639'],                     #Servo 639
+                [76,534,0,76,534,'Servo 640'],                     #Servo 640
+                [76,534,0,76,534,'Servo 641'],                     #Servo 641
+                [76,534,0,76,534,'Servo 642'],                     #Servo 642
+                [76,534,0,76,534,'Servo 643'],                     #Servo 643
+                [76,534,0,76,534,'Servo 644'],                     #Servo 644
+                [76,534,0,76,534,'Servo 645'],                     #Servo 645
+                [76,534,0,76,534,'Servo 646'],                     #Servo 646
+                [76,534,0,76,534,'Servo 647'],                     #Servo 647
+                [76,534,0,76,534,'Servo 648'],                     #Servo 648
+                [76,534,0,76,534,'Servo 649'],                     #Servo 649
+                [76,534,0,76,534,'Servo 650'],                     #Servo 650
+                [76,534,0,76,534,'Servo 651'],                     #Servo 651
+                [76,534,0,76,534,'Servo 652'],                     #Servo 652
+                [76,534,0,76,534,'Servo 653'],                     #Servo 653
+                [76,534,0,76,534,'Servo 654'],                     #Servo 654
+                [76,534,0,76,534,'Servo 655'],                     #Servo 655
+                [76,534,0,76,534,'Servo 656'],                     #Servo 656
+                [76,534,0,76,534,'Servo 657'],                     #Servo 657
+                [76,534,0,76,534,'Servo 658'],                     #Servo 658
+                [76,534,0,76,534,'Servo 659'],                     #Servo 659
+                [76,534,0,76,534,'Servo 660'],                     #Servo 660
+                [76,534,0,76,534,'Servo 661'],                     #Servo 661
+                [76,534,0,76,534,'Servo 662'],                     #Servo 662
+                [76,534,0,76,534,'Servo 663'],                     #Servo 663
+                [76,534,0,76,534,'Servo 664'],                     #Servo 664
+                [76,534,0,76,534,'Servo 665'],                     #Servo 665
+                [76,534,0,76,534,'Servo 666'],                     #Servo 666
+                [76,534,0,76,534,'Servo 667'],                     #Servo 667
+                [76,534,0,76,534,'Servo 668'],                     #Servo 668
+                [76,534,0,76,534,'Servo 669'],                     #Servo 669
+                [76,534,0,76,534,'Servo 670'],                     #Servo 670
+                [76,534,0,76,534,'Servo 671'],                     #Servo 671
+                [76,534,0,76,534,'Servo 672'],                     #Servo 672
+                [76,534,0,76,534,'Servo 673'],                     #Servo 673
+                [76,534,0,76,534,'Servo 674'],                     #Servo 674
+                [76,534,0,76,534,'Servo 675'],                     #Servo 675
+                [76,534,0,76,534,'Servo 676'],                     #Servo 676
+                [76,534,0,76,534,'Servo 677'],                     #Servo 677
+                [76,534,0,76,534,'Servo 678'],                     #Servo 678
+                [76,534,0,76,534,'Servo 679'],                     #Servo 679
+                [76,534,0,76,534,'Servo 680'],                     #Servo 680
+                [76,534,0,76,534,'Servo 681'],                     #Servo 681
+                [76,534,0,76,534,'Servo 682'],                     #Servo 682
+                [76,534,0,76,534,'Servo 683'],                     #Servo 683
+                [76,534,0,76,534,'Servo 684'],                     #Servo 684
+                [76,534,0,76,534,'Servo 685'],                     #Servo 685
+                [76,534,0,76,534,'Servo 686'],                     #Servo 686
+                [76,534,0,76,534,'Servo 687'],                     #Servo 687
+                [76,534,0,76,534,'Servo 688'],                     #Servo 688
+                [76,534,0,76,534,'Servo 689'],                     #Servo 689
+                [76,534,0,76,534,'Servo 690'],                     #Servo 690
+                [76,534,0,76,534,'Servo 691'],                     #Servo 691
+                [76,534,0,76,534,'Servo 692'],                     #Servo 692
+                [76,534,0,76,534,'Servo 693'],                     #Servo 693
+                [76,534,0,76,534,'Servo 694'],                     #Servo 694
+                [76,534,0,76,534,'Servo 695'],                     #Servo 695
+                [76,534,0,76,534,'Servo 696'],                     #Servo 696
+                [76,534,0,76,534,'Servo 697'],                     #Servo 697
+                [76,534,0,76,534,'Servo 698'],                     #Servo 698
+                [0,4095,2,0,4095,'LR1,LR2']];                     #Servo 699

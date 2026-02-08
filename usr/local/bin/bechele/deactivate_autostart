@@ -1,3 +1,4 @@
 #!/usr/bin/sh
+# Version 3.0 Rolf Jethon (2026)
 systemctl disable runlive
 systemctl stop runlive

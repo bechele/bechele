@@ -25,12 +25,12 @@ sub get_vars {
 #--------------------------------- globally used constants ---------------------------------
 $netport=7625;                                  # the network port nodes are listening to - change only if you also recompile the nodes
 $sendtonet=1;                                   # Output the moves to network devices via broadcast
-$sendtopca=0;                                   # Output the moves to a directly connected PCA9685 PWM chip
+$sendtopca=1;                                   # Output the moves to a directly connected PCA9685 PWM chip
 $use_gamepad=0;                                 # 0= serial joystick 1= usb gamepad
 $joystick_device=0;                             # joystick 0 or 1 - only if gamepad is active
-$serialport="/dev/ttyS3";                       # serial port to read the joystick from
+$serialport="/dev/ttyAMA0";                     # serial port to read the joystick from
 $waittime_serial=12000000;                      # wait for 12 ms (12000000 ns)
-$i2cport="/dev/i2c-0";                          # i2c port to send the servo movements to
+$i2cport="/dev/i2c-1";                          # i2c port to send the servo movements to
 $pwm_res=4096;                                  # the resolution of the PCA9685 PWM
 $i2c_address=0x40;                              # the I2C Address of the first PWM Board - subsequent PCBs automatically  +1
 $i2c_freq=50;                                   # the frequency of the PWM in Hz
@@ -45,10 +45,10 @@ $matrix_popup_width=120;                        # The width for the matrix popup
 $max_out_pins=16;                               # Number of output pins for network PWM devices
 $dboutlist="/tmp/dbout_";                       # File database output list is written to
 #------- only relevant if joystick is in use ---------------
-$joystick_x_start=0;                            # The joystick x mechanical start limit value
-$joystick_x_end=939;                            # The joystick x mechanical end limit value
-$joystick_y_start=0;                            # The joystick y mechanical start limit value
-$joystick_y_end=939;                            # The joystick y mechanical end limit value
+$joystick_x_start=130;                          # The joystick x mechanical start limit value
+$joystick_x_end=628;                            # The joystick x mechanical end limit value
+$joystick_y_start=130;                          # The joystick y mechanical start limit value
+$joystick_y_end=618;                            # The joystick y mechanical end limit value
 #use these values for joystick calibration:
 #$joystick_x_start=0;                           # The joystick x mechanical start limit value
 #$joystick_x_end=1024;                          # The joystick x mechanical end limit value
@@ -74,19 +74,19 @@ $num_servos_per_row=25;                         # number of servos shown in each
 #you need to comment out one of the following blocks to do a correct pin assignment
 #-----------------------------------------------------------
 #------- Settings for the GPIO pins OrangePI PC ------------
-$OE=5;                                          # pin 11 Output enable for PCA9685
-$NEXT=6;                                        # pin 12 next MP 3 button
-$PREV=9;                                        # pin 16 previous MP3 button
-$S1=10;                                         # pin 18 S1 Button
-$S2=13;                                         # pin 22 S2 Button
-$SHUT=2;                                        # pin 7  SHUT Button
+#$OE=5;                                          # pin 11 Output enable for PCA9685
+#$NEXT=6;                                        # pin 12 next MP 3 button
+#$PREV=9;                                        # pin 16 previous MP3 button
+#$S1=10;                                         # pin 18 S1 Button
+#$S2=13;                                         # pin 22 S2 Button
+#$SHUT=2;                                        # pin 7  SHUT Button
 #------- Settings for the GPIO pins RASPI 1B ---------------
-#$OE=0;                                          # pin 11 Output enable for PCA9685
-#$NEXT=1;                                        # pin 12 next MP 3 button
-#$PREV=4;                                        # pin 16 previous MP3 button
-#$S1=5;                                          # pin 18 S1 Button
-#$S2=6;                                          # pin 22 S2 Button
-#$SHUT=7;                                        # pin 7  SHUT Button
+$OE=0;                                          # pin 11 Output enable for PCA9685
+$NEXT=1;                                        # pin 12 next MP 3 button
+$PREV=4;                                        # pin 16 previous MP3 button
+$S1=5;                                          # pin 18 S1 Button
+$S2=6;                                          # pin 22 S2 Button
+$SHUT=7;                                        # pin 7  SHUT Button
 
 # The following anonymous array represents the servo limit positions in pulses of a maximum of $servores
 #----------------Servostart,Servoend,invert,servolimit start,servolimit end,label-----------------------
@@ -96,7 +96,7 @@ $SHUT=2;                                        # pin 7  SHUT Button
 # The value range of "Servostart","Servoend","servolimit start" and "servolimit end" is 0 to 4096
 # If you want to address more than 64 servos, you need to extend the array below accordingly
 # read also the README file in /usr/local/bin for details
-$servosettings=[[203,390,0,170,603,'EyeRight left/right'],          # Servo 0 
+$servosettings=[[268,423,0,170,600,'EyeRight left/right'],          # Servo 0 
 	        #[150,700,0,150,700,'only for servo calibration'],   Set these values to do the first Servo calibration within servocalib.pl to determine the servo type limits
                 [270,415,0,170,600,'EyeLeft left/right'],           # Servo 1
                 [211,578,1,170,600,'EyeRight up/down'],             # Servo 2
@@ -104,24 +104,24 @@ $servosettings=[[203,390,0,170,603,'EyeRight left/right'],          # Servo 0
                 [248,531,1,170,600,'LidRight'],                     # Servo 4
                 [239,540,1,170,600,'LidLeft'],                      # Servo 5
                 [177,507,0,170,600,'EyeAngle'],                     # Servo 6
-                [170,450,0,170,600,'Mouth up/down'],                # Servo 7
-                [170,591,1,170,600,'Mouth width'],                  # Servo 8
+                [215,455,0,170,600,'Mouth up/down'],                # Servo 7
+                [202,566,1,170,600,'Mouth width'],                  # Servo 8
                 [170,600,0,170,600,'Head rotation'],                # Servo 9
                 [180,453,1,170,600,'Head left/right'],              # Servo 10
                 [186,550,0,170,600,'Head forwar/back'],             # Servo 11
-                [251,469,0,170,600,'EyeRight left/right'],          # Servo 12
-                [304,450,0,170,600,'EyeLeft left/right'],           # Servo 13
+                [251,459,0,170,600,'EyeRight left/right'],          # Servo 12
+                [304,490,0,170,600,'EyeLeft left/right'],           # Servo 13
                 [179,497,1,170,600,'EyeRight up/down'],             # Servo 14
                 [196,479,1,170,600,'EyeLeft up/down'],              # Servo 15
                 [264,578,1,170,600,'LidRight'],                     # Servo 16
                 [222,566,1,170,600,'LidLeft'],                      # Servo 17
                 [202,516,0,170,600,'EyeAngle'],                     # Servo 18
-                [211,600,0,170,600,'Mouth up/down'],                # Servo 19
-                [170,591,1,170,600,'Mouth width'],                  # Servo 20
+                [194,585,0,170,600,'Mouth up/down'],                # Servo 19
+                [185,565,1,170,600,'Mouth width'],                  # Servo 20
                 [210,577,0,170,600,'Head rotation'],                # Servo 21
-                [257,509,0,170,600,'Head left/right'],              # Servo 22
-                [203,538,1,170,600,'Head forwar/back'],             # Servo 23
-                [380,400,2,170,600,'Relay0,Relay1,Relay2,Relay3,Relay4,Relay5,Relay6,Relay7,Relay8,Relay9,Relay10,Relay11,Relay12,Relay13,Relay14,Relay15'],                     # Servo 24
+                [257,509,1,170,600,'Head left/right'],              # Servo 22
+                [203,538,0,170,600,'Head forwar/back'],             # Servo 23
+                [380,400,0,170,600,'Relay0,Relay1,Relay2,Relay3,Relay4,Relay5,Relay6,Relay7,Relay8,Relay9,Relay10,Relay11,Relay12,Relay13,Relay14,Relay15'],                     # Servo 24
                 [380,400,0,170,600,'Servo 25'],                     # Servo 25
                 [380,400,0,170,600,'Servo 26'],                     # Servo 26
                 [380,400,0,170,600,'Servo 27'],                     # Servo 27

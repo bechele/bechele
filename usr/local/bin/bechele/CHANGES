@@ -1,3 +1,67 @@
+Changes from 2.0 to 3.0
+For all programs:
+ - Network nodes are new hardware devices to connect Servos or Relais modules
+   to. The nodes are small and independent of the Raspi wiring. Since nodes just
+   need power supply and depending of the configuration a Ethernet cable, or
+   WiFi connection, installations may become huge with lots of nodes, servos and 
+   relais. All programs support network devices.
+ - Network devices and directly to the Raspi connected PCA9685 boards may work 
+   parallel. They do disturb each other if configured correctly. 
+ - Now all programs take the configuration from the application specific file
+   ConfigL.pm within the scene directory, that must be passed to each program
+   during start of the program. This way, several different Scenes may exist
+   parallel on a single Raspi. During start of trackui.pl with a new directory,
+   ConfigL will be automatically copied from /usr/local/bin/bechele/Modules
+   into this application specific directory. This means, if you want to change
+   parameters for a specific application/scene you need to edit ConfigL.pm in
+   its directory, not in /usr/local/bin/bechele/Modules.
+   
+trackui.pl:
+ - the setup of the servo bindings has moved into a seperate window that is 
+   opened at startup - otherwise acessible via button 'Servo_Matrix' 
+ - The servo matrix, where servos to be teached are selected is now smaller and
+   contains only one servo description for both, X and Y Joystick. Because the 
+   window is no more split into X and Y, there is much more space for notebook
+   pages. So the number of displayable servos has drastically incresed. This
+   is especially important for Installation with a big number of Servos/Relais.
+   With the default small window size, already around 500 Servos may be 
+   displayed. By resizing the window, the number may be even increased a lot.
+ - new feature via button 'Block_Operations'. Pressing this button opens a new
+   window that allows to save and load movement blocks from and to file. This
+   may be helpful, if special sequences need to be used sevral times. 
+ - Soupport for GPM mouse, so the program also allows mouse support using the
+   Keyboard and mouse and monitor directly connected to the Raspi.
+ - Operation of the program without mouse - only with keyboard is now possible.
+ - Now interprets comma separated servo names in ConfigL.pm as Relay setup. So
+   the number of elements in the comma separated servoname will result in 
+   servo matrix entries (maximum 16 - 0-15 are allowed) for Relay control. So 
+   each entry visible in the matrix is for 1 bit. Joystick movements still
+   control the binary state of the relais, where positions above middle will 
+   become 1 - relay on - and joystick position below middle become 0 - relay
+   off. The Matrix bindings work for both, relais and servos the same way. They
+   may be even mixed if this is desirable. 
+
+live.pl:
+ - New parameter $play_full_mp3 in ConfigL.pm, that stops the skip immediately
+   to the next mp3, if the 'next' button on the button pad is pressed. So the 
+   software plays the running MP3 till the end, till it reacts to the next 
+   button press. 
+ - New parameter $mp3loop This does change the default behaviour to repeat 
+   the last mp3 after the last mp3 has been reached. Parameter "mp3loop": it 
+   cwmay be important for unattended installations, where guests trigger the 
+   play of the scene by a light barrier or similar. At the end of all mp3 files,
+   the session loops to the first mp3 again.
+ - Removed a bug in repeat mode where after the repeat sound, the repeated
+   mp3 could not be interrupted by a new keypress.
+
+New program nodeconfig.pl
+ - This program is used to setup the network nodes and prepare them to receive 
+   the desired servo or relais data.
+ - saves the node settings in a data base to be able to keep the overview on
+   node's configurations, especially if a large number of nodes is in use. 
+   Without a data base it would be difficult to keep track of the node functions
+   and configuration. The data base is located in the scene directory.
+  
 Changes from 1.1 to 2.0
 For all programs:
  - The number of addressable Servos is just limited by the number of PCA9685 
