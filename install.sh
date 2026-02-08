@@ -26,22 +26,7 @@ else
 	cp  -R --no-preserve=ownership usr/local/bin/* /usr/local/bin
 	echo "Bechele executables written to /usr/local/bin"
 fi
-#-------------------------------------------------------------------------------------------------
-# Inastall the autostart service file (does not start the service)
-#-------------------------------------------------------------------------------------------------
-if [ -f /usr/lib/systemd/system/runlive.service ]; then
-	read -p "Bechele runlive.service already exist in /usr/lib/systemd/system - overwrite (yes/no) ?" -n 1 -r
-	echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-		cp --no-preserv=ownership usr/lib/systemd/system/runlive.service /usr/lib/systemd/system
-		echo "Existing runlive.service overwritten !"
-	fi
-else
-	if [ -n "$(ls -A /usr/lib/systemd/system 2>/dev/null)" ]; then
-		cp --no-preserve=ownership usr/lib/systemd/system/runlive.service /usr/lib/systemd/system
-		echo "runlive.service copied to /usr/lib/systemd/system"
-	fi
-fi
+
 #------------------------------------------------------------------------------------------------
 # copies the example mp3 and servo files
 # -----------------------------------------------------------------------------------------------
