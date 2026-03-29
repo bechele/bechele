@@ -832,6 +832,7 @@ sub block_ui{
   our $blkstatusheight=$blkstatus->height();
   $popup->focus;
   $popup->draw;                                                            # show the popup
+  blkprintstatus();
   blockfile(0);                                                            # force reading the first block header
   #------------------------------------------------------------
   #  load the servofile maximum values into the four fromto parameters - called by keypress 's' or 'load_servofile_maximum'
@@ -1037,16 +1038,16 @@ sub block_ui{
       my ($fromservo,$toservo,$frommove,$tomove)=unpack"vvvv",($rawheader); # read the header into vars
       my $descript=substr($data,0,1024);              # extract the description
       $data=substr($data,1024);                       # shorten the data block - from here $data only contains moves 
-      my $num_servos=($toservo-$fromservo)+1;         # number of servos in block
+      my $svos_in_blk=($toservo-$fromservo)+1;         # number of servos in block
       my $nummoves=($tomove-$frommove)+1;             # number of moves in block
       my $ifromservo=$impstartblksrv->get();          # desired servo start in servoarray
       my $itoservo=$imptoblksrv->get();               # desired servo stop in servoarray 
       my $ifrommove=$impstartblkmov->get();           # desired move start in servoarray
       my $itomove=$imptoblkmov->get();                # desired move stop in servoarray
-      if ($itoservo > ($ifromservo+($num_servos-1))) {$itoservo=$ifromservo+($num_servos-1);}#if servo stop field would exceed the block, calc the value from block
+      if ($itoservo > ($ifromservo+($svos_in_blk-1))) {$itoservo=$ifromservo+($svos_in_blk-1);}#if servo stop field would exceed the block, calc the value from block
       if ($itomove > ($ifrommove+($nummoves-1))) {$itomove=$ifrommove+($nummoves-1);}#if move stop field would exceed the block, calc the value from block
       if ($ifromservo !~ /\d/) {$ifromservo=0;}       # if servo start field is empty use zero 
-      if ($itoservo !~ /\d/) {$itoservo=$ifromservo+($num_servos-1);}#if servo stop field is empty calc the value from block
+      if ($itoservo !~ /\d/) {$itoservo=$ifromservo+($svos_in_blk-1);}#if servo stop field is empty calc the value from block
       if ($ifrommove !~ /\d/) {$ifrommove=0;}         # if move start field is empty use zero
       if ($itomove !~ /\d/) {$itomove=$ifrommove+($nummoves-1);}#if move stop field is empty calc the value from block
       my $servorange=($itoservo-$ifromservo)+1;       # calc the nuber of target servos in servoarray
@@ -1089,12 +1090,12 @@ sub block_ui{
       my $i=0;
       my @blockcontent;
       while ( $data ) {                                      # as long as we have content, read it into array
-        $blockcontent[$i]=[unpack ("v[$num_servos]",$data)]; # extract into a separate array @blockcontent to be able to shift the data to the destination
-        $data=substr $data,($num_servos)*2;                  # shorten the array after extraction
+        $blockcontent[$i]=[unpack ("v[$svos_in_blk]",$data)]; # extract into a separate array @blockcontent to be able to shift the data to the destination
+        $data=substr $data,($svos_in_blk)*2;                  # shorten the array after extraction
         $i++;
       }
       iloop: for ($i=0;$i<$nummoves;$i++){                   # transfer the data to the desired destination
-        jloop: for (my $j=0;$j<$num_servos;$j++){
+        jloop: for (my $j=0;$j<$svos_in_blk;$j++){
           $servocontent[$i+$ifrommove][$j+$ifromservo]=$blockcontent[$i][$j];
           if ($j>=$servorange-1){ last jloop }
         }
@@ -1160,11 +1161,11 @@ sub block_ui{
     }
     my $fromservo=$startblksrv->get();                # determine block start servo
     my $toservo=$toblksrv->get();                     # determine block stop servo
-    my $num_servos=($toservo-$fromservo);             # number of servos in block
+    my $svos_in_block=($toservo-$fromservo);          # number of servos in block
     my $ifromservo=$impstartblksrv->get();            # desired servo start in servoarray
-    my $newtext=$ifromservo+$num_servos;              # calc the value from block
-    if ($newtext > ($num_servos-1)){                  # value must be lower than max. number of servos in svo file 
-      $newtext=$num_servos-1;                         # limit to this value
+    my $newtext=$ifromservo+$svos_in_block;           # calc the value from block
+    if ($newtext > ($svos_in_block-1)){               # value must be lower than max. number of servos in svo file 
+      $newtext=$svos_in_block-1;                      # limit to this value
     } 
     $imptoblksrv->text($newtext);                     # set the itoservo with calculated value
     $ia->draw(1);
