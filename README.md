@@ -2,7 +2,7 @@
 It was initially intended to ease ventriloquist like puppet play, but it can do meanwhile much more than that. Since the number of possibly driven servos with this version is far beyond usual needs, it may be used any time, you need to move mechanics synchronous to sound in a record and replay manner.
 In version 3.0 new features have been added. Most important, it now supports the use of network nodes as output devices, that allow scenes with lots of characters distributed over a big area. For details have a look into the README file in directory /usr/local/bin/bechele.
 ----
-[bechele sample video](https://www.youtube.com/watch?v=QalkR-c4_Ys)
+[bechele sample video](https://makertube.net/w/wW775VPPxZ1a6aT2aupfCH)
 ----
 For further info also visit: [bechele home page](https://bechele.de/?page_id=55)
 ----
